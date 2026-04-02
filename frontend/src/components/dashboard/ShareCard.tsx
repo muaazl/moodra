@@ -1,0 +1,110 @@
+'use client';
+
+import React from 'react';
+import { MessageSquare, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { ScoringResponse } from '@/types/analysis';
+
+interface ShareCardProps {
+  result: ScoringResponse;
+  id?: string;
+}
+
+export const ShareCard: React.FC<ShareCardProps> = ({ result, id }) => {
+  return (
+    <div 
+      id={id}
+      className="w-[540px] h-[675px] bg-[#050510] relative overflow-hidden flex flex-col p-10 font-sans text-zinc-50"
+      style={{ 
+        backgroundImage: 'radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(225, 29, 72, 0.1) 0%, transparent 50%)'
+      }}
+    >
+      {/* Background Decor */}
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-zinc-600/10 blur-[80px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-zinc-600/5 blur-[80px] rounded-full pointer-events-none" />
+
+      {/* Header Branding */}
+      <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded-lg bg-zinc-600 flex items-center justify-center shadow-[0_0_15px_rgba(79,70,229,0.5)]">
+            <MessageSquare className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-xl font-black tracking-tighter uppercase">EXPOSE<span className="text-zinc-400">CHAT</span></span>
+        </div>
+        <div className="px-4 py-1 rounded-full bg-zinc-500/10 border border-zinc-500/20 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+          PROBABILISTIC ANALYSIS
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 space-y-8 flex flex-col justify-center">
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 text-zinc-400">
+            <Sparkles className="w-5 h-5" />
+            <span className="font-bold text-xs uppercase tracking-widest leading-none">The Vibe</span>
+          </div>
+          <h1 className="text-5xl font-black tracking-tight leading-[1.05] bg-gradient-to-br from-white via-white to-zinc-300 bg-clip-text text-transparent">
+            {result.overall_mood}
+          </h1>
+          <p className="text-lg text-zinc-200/60 font-medium leading-relaxed max-w-[90%]">
+            &ldquo;{result.overall_summary}&rdquo;
+          </p>
+        </div>
+
+        {/* Big Health Stats */}
+        <div className="grid grid-cols-2 gap-6 py-6">
+          <div className="p-6 rounded-3xl bg-white/5 border border-white/10 space-y-1 backdrop-blur-sm shadow-xl shadow-black/20">
+            <div className="flex items-center space-x-2 text-zinc-400/50 mb-1">
+              <TrendingUp className="w-3 h-3" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Health</span>
+            </div>
+            <p className="text-4xl font-black text-white">
+              {Math.round(result.global_metrics.conversation_health * 100)}%
+            </p>
+          </div>
+          <div className="p-6 rounded-3xl bg-white/5 border border-white/10 space-y-1 backdrop-blur-sm shadow-xl shadow-black/20">
+            <div className="flex items-center space-x-2 text-zinc-400/50 mb-1">
+              <MessageSquare className="w-3 h-3" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Chat Stats</span>
+            </div>
+            <p className="text-4xl font-black text-white">
+              {result.global_metrics.total_messages.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Participant Highlights */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2 text-zinc-400/50">
+            <Users className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Key Participants</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {result.participants.slice(0, 4).map((p, i) => (
+              <div key={i} className="flex items-center space-x-3 p-3 rounded-2xl bg-zinc-500/5 border border-zinc-500/10 hover:bg-zinc-500/10 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-zinc-600/30 flex items-center justify-center font-black text-[10px] text-zinc-300 uppercase shrink-0">
+                  {p.name.charAt(0)}
+                </div>
+                <div className="min-w-0 pr-2">
+                  <p className="font-bold text-xs text-white truncate truncate-ellipsis">{p.name}</p>
+                  <p className="text-[10px] text-zinc-300/50 font-bold uppercase truncate truncate-ellipsis">{p.badges[0] || 'Member'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Branding */}
+      <div className="mt-12 pt-8 border-t border-zinc-500/10 flex items-end justify-between">
+        <div>
+          <p className="text-[9px] font-bold text-zinc-400/30 uppercase tracking-[0.3em] mb-1">Generated by local AI</p>
+          <p className="text-xs font-black text-zinc-400/60 uppercase tracking-tighter">EXPOSETHECHAT.IO</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[9px] font-bold text-zinc-400/30 uppercase tracking-[0.3em] mb-1 underline">Zero Cloud Storage</p>
+          <p className="text-[9px] font-bold text-zinc-400/30 uppercase tracking-[0.3em]">Privacy First Analysis</p>
+        </div>
+      </div>
+    </div>
+  );
+};
