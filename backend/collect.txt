@@ -1,0 +1,100 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0
+rootdir: D:\GitHub\expose-the-chat\backend
+plugins: anyio-4.12.1
+collected 27 items / 4 errors
+
+<Dir backend>
+  <Dir tests>
+    <Module test_api_integration.py>
+      <Function test_health_endpoint>
+      <Function test_analyze_text_full_flow>
+      <Function test_analyze_file_flow>
+      <Function test_analyze_invalid_format>
+      <Function test_analyze_text_invalid_payload>
+      <Function test_analyze_file_invalid_extension>
+    <Module test_preprocessing.py>
+      <Function test_basic_cleaning>
+      <Function test_emoji_extraction>
+      <Function test_intensity_signals>
+      <Function test_topic_variant>
+      <Function test_repeated_chars>
+      <Function test_process_sequence>
+    <Module test_privacy_cleanup.py>
+      <Function test_memory_cleanup_after_analysis>
+      <Function test_no_temp_files_left>
+    <Module test_scoring_engine.py>
+      <Function test_scoring_engine_flow>
+    <Module test_sentiment.py>
+      <Function test_sentiment_analyzer_logic>
+      <Function test_empty_chat>
+      <Function test_media_omitted_handling>
+    <Module test_tonality.py>
+      <Function test_dry_texting_signals>
+      <Function test_passive_aggression_signals>
+      <Function test_participant_aggregation>
+    <Module test_topic_analyzer.py>
+      <Function test_topic_analyzer_basic>
+      <Function test_topic_analyzer_empty>
+      <Function test_topic_analyzer_short>
+    <Module test_toxicity.py>
+      <Function test_toxicity_analyzer_basic_logic>
+      <Function test_analyze_chat_aggregation>
+      <Function test_edge_cases>
+
+=================================== ERRORS ====================================
+__________________ ERROR collecting tests/test_nlp_module.py __________________
+ImportError while importing test module 'D:\GitHub\expose-the-chat\backend\tests\test_nlp_module.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_nlp_module.py:3: in <module>
+    from backend.app.services.nlp.entity_extractor import EntityExtractor
+E   ModuleNotFoundError: No module named 'backend'
+____________________ ERROR collecting tests/test_parser.py ____________________
+ImportError while importing test module 'D:\GitHub\expose-the-chat\backend\tests\test_parser.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\importlib\__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_parser.py:3: in <module>
+    from backend.app.services.parser.whatsapp import WhatsAppParser
+E   ModuleNotFoundError: No module named 'backend'
+______________________ ERROR collecting tests_output.txt ______________________
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\pathlib\__init__.py:788: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:325: in decode
+    ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+_____________________ ERROR collecting tests_output_2.txt _____________________
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\pathlib\__init__.py:788: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:325: in decode
+    ???
+E   UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+============================== warnings summary ===============================
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\fastapi\routing.py:233
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\fastapi\routing.py:233
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\fastapi\routing.py:233
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\fastapi\routing.py:233
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\fastapi\routing.py:233
+  C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\fastapi\routing.py:233: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    is_coroutine = asyncio.iscoroutinefunction(dependant.call)
+
+C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\starlette\_utils.py:40: 13 warnings
+  C:\Users\Muaaz\AppData\Local\Programs\Python\Python314\Lib\site-packages\starlette\_utils.py:40: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    return asyncio.iscoroutinefunction(obj) or (callable(obj) and asyncio.iscoroutinefunction(obj.__call__))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_nlp_module.py
+ERROR tests/test_parser.py
+ERROR tests_output.txt - UnicodeDecodeError: 'utf-8' codec can't decode byte ...
+ERROR tests_output_2.txt - UnicodeDecodeError: 'utf-8' codec can't decode byt...
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!
+==================== 27 tests collected, 4 errors in 0.46s ====================

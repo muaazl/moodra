@@ -1,0 +1,388 @@
+import numpy as np
+from typing import List, Dict, Any, Optional
+from scipy.special import expit # sigmoid function for normalization
+
+from ..nlp.schemas import (
+    SpeakerDetectionResult,
+    SentimentAnalysisResponse,
+    ToxicityAnalysisResponse,
+    TonalityAnalysisResponse,
+    TopicAnalysisResponse
+)
+from ..preprocessing.schemas import PreprocessingResult
+from .schemas import (
+    ScoringResponse, 
+    ParticipantScoring, 
+    SegmentScoring, 
+    StandoutCard, 
+    ScoreMetadata
+)
+
+class ScoringEngine:
+    """Aggregates low-level NLP features into high-level conversation metrics."""
+
+    def __init__(self):
+        # Weight configurations for different metrics
+        self.tension_weights = {
+            "toxicity": 0.5,
+            "negative_sentiment": 0.3,
+            "low_positivity": 0.1,
+            "volatility": 0.1
+        }
+        
+        self.dominance_weights = {
+            "msg_ratio": 0.4,
+            "word_ratio": 0.4,
+            "opener_ratio": 0.2
+        }
+
+    def analyze(
+        self,
+        preprocessed: PreprocessingResult,
+        speakers: SpeakerDetectionResult,
+        sentiment: SentimentAnalysisResponse,
+        toxicity: ToxicityAnalysisResponse,
+        tonality: TonalityAnalysisResponse,
+        topics: TopicAnalysisResponse
+    ) -> ScoringResponse:
+        """The main entry point for the scoring layer."""
+        
+        # 1. Map messages to their respective analysis objects for easier lookup
+        msg_map = self._build_message_map(sentiment, toxicity, tonality)
+        
+        # 2. Calculate Participant Scoring
+        participant_scores = self._calculate_participant_metrics(
+            speakers, sentiment, toxicity, tonality, topics
+        )
+        
+        # 3. Calculate Segment-level Scoring
+        segment_scores = self._calculate_segment_metrics(
+            topics, sentiment, toxicity, tonality, speakers, msg_map
+        )
+        
+        # 4. Generate Timeline (Chart data)
+        timeline = self._generate_timeline(sentiment, toxicity, tonality, topics)
+        
+        # 5. Generate Standout Cards
+        standout_cards = self._generate_standout_cards(
+            participant_scores, segment_scores, sentiment, toxicity
+        )
+        
+        # 6. Overall Mood and Summary
+        overall_mood = self._determine_overall_mood(sentiment, toxicity, tonality)
+        overall_summary = self._generate_overall_summary(overall_mood, participant_scores)
+        roast_summary = self._generate_roast(overall_mood, participant_scores, standout_cards)
+
+        return ScoringResponse(
+            overall_summary=overall_summary,
+            roast_summary=roast_summary,
+            overall_mood=overall_mood,
+            participants=participant_scores,
+            segments=segment_scores,
+            timeline=timeline,
+            standout_cards=standout_cards,
+            global_metrics={
+                "conversation_health": self._calculate_health(toxicity, sentiment),
+                "total_messages": len(preprocessed.messages)
+            }
+        )
+
+    def _build_message_map(self, sentiment, toxicity, tonality) -> Dict[int, Dict[str, Any]]:
+        """Helpers to index messages by ID across all analysis results."""
+        m_map: Dict[int, Dict[str, Any]] = {}
+        
+        for s in sentiment.messages:
+            if s.message_id not in m_map:
+                m_map[s.message_id] = {}
+            m_map[s.message_id]["sentiment"] = s
+            
+        for t in toxicity.messages:
+            if t.message_id not in m_map:
+                m_map[t.message_id] = {}
+            m_map[t.message_id]["toxicity"] = t
+            
+        for tn in tonality.messages:
+            if tn.message_id not in m_map:
+                m_map[tn.message_id] = {}
+            m_map[tn.message_id]["tonality"] = tn
+            
+        return m_map
+
+    def _calculate_participant_metrics(
+        self, speakers, sentiment, toxicity, tonality, topics
+    ) -> List[ParticipantScoring]:
+        results = []
+        
+        # Get baseline for normalization
+        total_msgs = sum(p.messages_sent for p in speakers.participants)
+        total_words = sum(p.words_total for p in speakers.participants)
+        
+        for p_profile in speakers.participants:
+            # A. Dominance calculation
+            msg_ratio = p_profile.messages_sent / total_msgs if total_msgs > 0 else 0
+            word_ratio = p_profile.words_total / total_words if total_words > 0 else 0
+            # Opener logic could be added here (e.g. who sent the first msg in segments)
+            
+            dom_val = (msg_ratio * self.dominance_weights["msg_ratio"] +
+                       word_ratio * self.dominance_weights["word_ratio"])
+            # Weighting it up to feel more granular
+            dom_val = min(1.0, dom_val * 1.5) 
+            
+            dominance = ScoreMetadata(
+                value=dom_val,
+                label=self._get_label_for_score(dom_val, ["Listener", "Active", "Driver", "Shot-caller"]),
+                explanation=f"Responsible for {msg_ratio:.1%} of messages and {word_ratio:.1%} of word volume.",
+                confidence=0.9
+            )
+            
+            # B. Tonality stats (Dryness / Passive Aggression)
+            p_tonality = next((t for t in tonality.participants if t.name == p_profile.name), None)
+            dry_val = p_tonality.avg_dryness if p_tonality else 0.0
+            pa_val = p_tonality.avg_passive_aggression if p_tonality else 0.0
+            
+            dryness = ScoreMetadata(
+                value=dry_val,
+                label=self._get_label_for_score(dry_val, ["Warm", "Normal", "Direct", "Dry AF"]),
+                explanation="Based on word count, punctuation usage, and response latency.",
+                confidence=0.8
+            )
+            
+            passive_aggression = ScoreMetadata(
+                value=pa_val,
+                label=self._get_label_for_score(pa_val, ["Chill", "Direct", "Slightly Edgy", "Highly P.A."]),
+                explanation="Calculated by mismatch between sentiment and tone signals.",
+                confidence=0.75
+            )
+            
+            # C. Main Character Energy: High dominance + being mentioned
+            mention_ratio = p_profile.mention_count / (total_msgs * 0.1 + 1)
+            mce_val = (dom_val * 0.6 + min(1.0, mention_ratio * 2) * 0.4)
+            
+            mce = ScoreMetadata(
+                value=mce_val,
+                label=self._get_label_for_score(mce_val, ["NPC", "Supporting", "Main Story", "The Protagonist"]),
+                explanation="A combination of how much they speak and how much they are the subject of conversation.",
+                confidence=0.7
+            )
+            
+            # D. Badges
+            badges = []
+            if dom_val > 0.7: badges.append("The Driver")
+            if dry_val > 0.6: badges.append("The Brick Wall")
+            if pa_val > 0.6: badges.append("Passive-Aggressive King/Queen")
+            if mce_val > 0.8: badges.append("Main Character")
+            
+            # E. Gaslighting Index (High Dominance + High PA + Low variability -> confident manipulation)
+            gaslight_val = (dom_val * 0.4) + (pa_val * 0.6)
+            gaslighting_index = ScoreMetadata(
+                value=gaslight_val,
+                label=self._get_label_for_score(gaslight_val, ["Innocent", "Slightly Sus", "Manipulative", "Master Gaslighter"]),
+                explanation="Calculated via combination of conversational dominance and latent passive-aggression.",
+                confidence=0.75
+            )
+
+            # F. Red Flag Score
+            p_tox = next((t for t in toxicity.participants if t.name == p_profile.name), None)
+            tox_val = p_tox.intensity_index if p_tox else 0.0
+            rf_val = (tox_val * 0.4) + (pa_val * 0.3) + (dry_val * 0.1) + (dom_val * 0.2)
+            rf_val = min(1.0, rf_val * 1.3)
+            red_flag_score = ScoreMetadata(
+                value=rf_val,
+                label=self._get_label_for_score(rf_val, ["Green Flag", "Yellow Flag", "Walking Red Flag", "Nuclear Hazard"]),
+                explanation="Aggregated toxicity, emotional withdrawal, and passive aggression markers.",
+                confidence=0.8
+            )
+            
+            # G. Badges Addition
+            if gaslight_val > 0.7: badges.append("The Gaslighter")
+            if rf_val > 0.8: badges.append("Walking Red Flag")
+            elif rf_val < 0.2: badges.append("Green Flag Status")
+            
+            results.append(ParticipantScoring(
+                name=p_profile.name,
+                dominance=dominance,
+                dry_texting=dryness,
+                passive_aggression=passive_aggression,
+                main_character_energy=mce,
+                gaslighting_index=gaslighting_index,
+                red_flag_score=red_flag_score,
+                badges=badges
+            ))
+            
+        return results
+
+    def _calculate_segment_metrics(
+        self, topics, sentiment, toxicity, tonality, speakers, msg_map
+    ) -> List[SegmentScoring]:
+        results = []
+        for seg in topics.segments:
+            # Aggregate-based segment scoring
+            tension_val = self._calculate_range_tension(seg, toxicity, sentiment)
+            
+            # Find the most notable message in this segment
+            seg_msg_ids = list(range(seg.start_id, seg.end_id + 1))
+            notable_id = self._rank_notable_messages(seg_msg_ids, msg_map)
+            
+            results.append(SegmentScoring(
+                segment_id=seg.id,
+                topic_label=seg.label,
+                tension=ScoreMetadata(
+                    value=tension_val,
+                    label=self._get_label_for_score(tension_val, ["Chill", "Rising", "Tense", "Explosive"]),
+                    explanation="Determined by shifts in toxicity and sentiment within this topic.",
+                    confidence=0.8
+                ),
+                mood=self._determine_segment_mood(seg),
+                notable_message_id=notable_id,
+                notable_reason="This message stood out due to its unusual intensity or tone markers." if notable_id else None
+            ))
+        return results
+
+    def _generate_timeline(self, sentiment, toxicity, tonality, topics) -> List[Dict[str, Any]]:
+        # Syncing sentiment timeline with toxicity peaks to compute true tension
+        timeline = []
+        num_bins = len(sentiment.timeline)
+        if num_bins == 0:
+            return timeline
+            
+        # Distribute toxicity scores into bins
+        tox_scores = [m.score for m in toxicity.messages]
+        bin_size = len(tox_scores) / num_bins if len(tox_scores) > 0 else 1
+        
+        for i, point in enumerate(sentiment.timeline):
+            start_idx = int(i * bin_size)
+            end_idx = int((i + 1) * bin_size)
+            bin_tox = tox_scores[start_idx:end_idx]
+            avg_bin_tox = sum(bin_tox) / len(bin_tox) if bin_tox else 0.0
+            
+            # Tension peaks when sentiment is highly negative OR toxicity is high
+            sent_tension = max(0.0, -point.average_score) * 0.6
+            tension_val = min(1.0, sent_tension + avg_bin_tox * 0.6)
+            
+            timeline.append({
+                "time": point.label,
+                "sentiment": point.average_score,
+                "volume": point.volume,
+                "tension": tension_val
+            })
+        return timeline
+
+    def _generate_standout_cards(self, participants, segments, sentiment, toxicity) -> List[StandoutCard]:
+        cards = []
+        # Example achievement
+        top_mce = max(participants, key=lambda x: x.main_character_energy.value)
+        if top_mce.main_character_energy.value > 0.5:
+             cards.append(StandoutCard(
+                type="award",
+                title="Main Character Energy",
+                recipient=top_mce.name,
+                description="This chat was basically their monologue. Everyone else is just an extra.",
+                icon_hint="crown"
+            ))
+             
+        # Example red flag
+        most_dry = max(participants, key=lambda x: x.dry_texting.value)
+        if most_dry.dry_texting.value > 0.6:
+            cards.append(StandoutCard(
+                type="red_flag",
+                title="Ghost in the Making",
+                recipient=most_dry.name,
+                description="Sending 'k' is a lifestyle choice here. Response energy is below freezing.",
+                icon_hint="ice-cube"
+            ))
+
+        return cards
+
+    def _determine_overall_mood(self, sentiment, toxicity, tonality) -> str:
+        s_score = sentiment.summary_metrics["overall_sentiment"]
+        t_intense = toxicity.global_intensity
+        
+        if t_intense > 0.5: return "Chaotic / Aggressive"
+        if s_score == "positive": return "Wholesome & Energetic"
+        if s_score == "negative": return "Drained or Heavy"
+        return "Typical / Varied"
+
+    def _generate_overall_summary(self, mood, participant_scores) -> str:
+        # Probabilistic summarizer
+        return f"This conversation was {mood.lower()}. " \
+               "The dynamics were driven by significant shifts in engagement."
+
+    def _generate_roast(self, mood, participant_scores, standout_cards) -> str:
+        # A brutally honest assessment
+        roast = ""
+        top_tox = max(participant_scores, key=lambda x: x.red_flag_score.value, default=None)
+        if top_tox and top_tox.red_flag_score.value > 0.6:
+            roast = f"Basically, {top_tox.name} needs a therapist. "
+        elif mood == "Drained or Heavy":
+            roast = "This chat is an absolute emotional vampire. Everyone needs some vitamin D. "
+        elif mood == "Chaos / Aggressive":
+            roast = "This group chat should be illegal. Pure unadulterated hostility. "
+        else:
+            roast = "Y'all are actually kinda boring. "
+
+        most_dry = max(participant_scores, key=lambda x: x.dry_texting.value, default=None)
+        if most_dry and most_dry.dry_texting.value > 0.6:
+            roast += f"Also, talking to {most_dry.name} is like talking to a brick wall that occasionaly sighs."
+            
+        gaslighter = max(participant_scores, key=lambda x: x.gaslighting_index.value, default=None)
+        if gaslighter and gaslighter.gaslighting_index.value > 0.7:
+            roast += f" {gaslighter.name} is lowkey gaslighting everyone and they think we don't notice."
+
+        if not roast.strip():
+            roast = "Honestly, this chat is so aggressively mid there's almost nothing to roast."
+
+        return roast
+
+    def _get_label_for_score(self, score: float, labels: List[str]) -> str:
+        """Helper to map 0-1 score to an array of labels."""
+        idx = int(score * (len(labels) - 1))
+        return labels[min(idx, len(labels) - 1)]
+
+    def _rank_notable_messages(self, msg_ids: List[int], msg_map: Dict[int, Dict[str, Any]]) -> Optional[int]:
+        """Rank messages in a list by how 'notable' they are."""
+        if not msg_ids: return None
+        
+        scores = []
+        for mid in msg_ids:
+            m_data = msg_map.get(mid, {})
+            # Score logic: toxicity + absolute sentiment variation + tonality intensity
+            # Toxicity (high weight)
+            t_val = getattr(m_data.get("toxicity"), "score", 0.0)
+            # Sentiment absolute distance from neutral (0.0 is neutral)
+            s_val = abs(getattr(m_data.get("sentiment"), "score", 0.0))
+            # Passive aggression (if high, very notable)
+            pa_val = getattr(m_data.get("tonality"), "passive_aggression_score", 0.0)
+            
+            # Combine scores with weights
+            composite = (t_val * 0.5) + (s_val * 0.3) + (pa_val * 0.2)
+            scores.append((mid, composite))
+            
+        # Return the best one
+        if not scores: return None
+        return max(scores, key=lambda x: x[1])[0]
+
+    def _calculate_range_tension(self, segment, toxicity, sentiment) -> float:
+        """Calculate tension for specific segment by averaging and peak-finding toxicity."""
+        seg_toxicity = [m.score for m in toxicity.messages if segment.start_id <= m.message_id <= segment.end_id]
+        if not seg_toxicity: return 0.0
+        
+        avg_tox = np.mean(seg_toxicity)
+        max_tox = np.max(seg_toxicity)
+        
+        # Tension is high if either high avg or high peaks
+        val = (avg_tox * 0.4) + (max_tox * 0.6)
+        # Apply sigmoid to make it more sensitive at the edges
+        return float(expit((val - 0.2) * 10))
+
+    def _determine_segment_mood(self, segment) -> str:
+        # Based on average sentiment of segment
+        s_avg = segment.sentiment_avg if segment.sentiment_avg is not None else 0.0
+        if s_avg > 0.4: return "Wholesome"
+        if s_avg < -0.4: return "Heavy / Heated"
+        return "Standard"
+
+    def _calculate_health(self, toxicity, sentiment) -> float:
+        # (1 - toxicity) * positivity_bias
+        t_base = 1.0 - toxicity.global_intensity
+        # Sentiment can dampen health if extremely negative or dry
+        return max(0.0, min(1.0, t_base))

@@ -1,0 +1,13 @@
+fastapi[all]
+pydantic>=2.0.0
+uvicorn
+pytest
+pandas
+numpy
+spacy
+sentence-transformers
+transformers
+scikit-learn
+torch --index-url https://download.pytorch.org/whl/cpu
+emoji
+psutil
