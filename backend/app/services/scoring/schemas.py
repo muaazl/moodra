@@ -8,6 +8,12 @@ class ScoreMetadata(BaseModel):
     explanation: str = Field(..., description="Probabilistic explanation of why this score was given")
     confidence: float = Field(..., description="Confidence of the underlying models (0.0 to 1.0)")
 
+class NotableQuote(BaseModel):
+    """A direct quote from the participant serving as proof/receipts."""
+    message_id: Optional[int]
+    text: str
+    context: str = Field(..., description="e.g. 'Biggest Red Flag', 'The Brick Wall'")
+
 class ParticipantScoring(BaseModel):
     """High-level metrics for a single participant."""
     name: str
@@ -20,6 +26,9 @@ class ParticipantScoring(BaseModel):
     
     # Simple list of "badges" or "labels" for the UI
     badges: List[str] = Field(default_factory=list)
+    
+    # Memorable messages as "receipts"
+    notable_quotes: List[NotableQuote] = Field(default_factory=list)
 
 class SegmentScoring(BaseModel):
     """High-level metrics for a conversation segment."""

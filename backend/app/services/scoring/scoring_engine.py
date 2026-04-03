@@ -15,7 +15,8 @@ from .schemas import (
     ParticipantScoring, 
     SegmentScoring, 
     StandoutCard, 
-    ScoreMetadata
+    ScoreMetadata,
+    NotableQuote
 )
 
 class ScoringEngine:
@@ -48,11 +49,11 @@ class ScoringEngine:
         """The main entry point for the scoring layer."""
         
         # 1. Map messages to their respective analysis objects for easier lookup
-        msg_map = self._build_message_map(sentiment, toxicity, tonality)
+        msg_map = self._build_message_map(preprocessed, sentiment, toxicity, tonality)
         
         # 2. Calculate Participant Scoring
         participant_scores = self._calculate_participant_metrics(
-            speakers, sentiment, toxicity, tonality, topics
+            speakers, sentiment, toxicity, tonality, topics, msg_map
         )
         
         # 3. Calculate Segment-level Scoring
@@ -87,29 +88,35 @@ class ScoringEngine:
             }
         )
 
-    def _build_message_map(self, sentiment, toxicity, tonality) -> Dict[int, Dict[str, Any]]:
+    def _build_message_map(self, preprocessed, sentiment, toxicity, tonality) -> Dict[int, Dict[str, Any]]:
         """Helpers to index messages by ID across all analysis results."""
         m_map: Dict[int, Dict[str, Any]] = {}
         
+        for pm in preprocessed.messages:
+            m_map[pm.message_id] = {
+                "text": pm.base_clean,
+                "sender": pm.raw.sender,
+                "sentiment": None,
+                "toxicity": None,
+                "tonality": None
+            }
+            
         for s in sentiment.messages:
-            if s.message_id not in m_map:
-                m_map[s.message_id] = {}
-            m_map[s.message_id]["sentiment"] = s
+            if s.message_id in m_map:
+                m_map[s.message_id]["sentiment"] = s
             
         for t in toxicity.messages:
-            if t.message_id not in m_map:
-                m_map[t.message_id] = {}
-            m_map[t.message_id]["toxicity"] = t
+            if t.message_id in m_map:
+                m_map[t.message_id]["toxicity"] = t
             
         for tn in tonality.messages:
-            if tn.message_id not in m_map:
-                m_map[tn.message_id] = {}
-            m_map[tn.message_id]["tonality"] = tn
+            if tn.message_id in m_map:
+                m_map[tn.message_id]["tonality"] = tn
             
         return m_map
 
     def _calculate_participant_metrics(
-        self, speakers, sentiment, toxicity, tonality, topics
+        self, speakers, sentiment, toxicity, tonality, topics, msg_map
     ) -> List[ParticipantScoring]:
         results = []
         
@@ -198,6 +205,47 @@ class ScoringEngine:
             if rf_val > 0.8: badges.append("Walking Red Flag")
             elif rf_val < 0.2: badges.append("Green Flag Status")
             
+            # H. Extract Notable Quotes (The Receipts)
+            notable_quotes = []
+            user_msgs = [(mid, data) for mid, data in msg_map.items() if data.get("sender") == p_profile.name]
+            
+            if user_msgs:
+                # 1. Biggest Red Flag (Max Toxicity)
+                red_flag_msg = max(user_msgs, key=lambda x: getattr(x[1].get("toxicity"), "score", 0.0) if x[1].get("toxicity") else 0.0, default=None)
+                if red_flag_msg and self._x_tox(red_flag_msg[1]) > 0.4:
+                     notable_quotes.append(NotableQuote(
+                         message_id=red_flag_msg[0], 
+                         text=red_flag_msg[1]["text"], 
+                         context="Biggest Red Flag 🚩"
+                     ))
+
+                # 2. Most Passive Aggressive
+                pa_msg = max(user_msgs, key=lambda x: getattr(x[1].get("tonality"), "passive_aggression_score", 0.0) if x[1].get("tonality") else 0.0, default=None)
+                if pa_msg and self._x_pa(pa_msg[1]) > 0.4 and pa_msg[0] not in [q.message_id for q in notable_quotes]:
+                     notable_quotes.append(NotableQuote(
+                         message_id=pa_msg[0], 
+                         text=pa_msg[1]["text"], 
+                         context="Passive Aggression 🙄"
+                     ))
+
+                # 3. The Brick Wall (Driest text, filter short texts)
+                dry_msg = max(user_msgs, key=lambda x: getattr(x[1].get("tonality"), "dryness_score", 0.0) if x[1].get("tonality") else 0.0, default=None)
+                if dry_msg and self._x_dry(dry_msg[1]) > 0.5 and dry_msg[0] not in [q.message_id for q in notable_quotes]:
+                     notable_quotes.append(NotableQuote(
+                         message_id=dry_msg[0], 
+                         text=dry_msg[1]["text"], 
+                         context="The Brick Wall 🧱"
+                     ))
+                     
+                # 4. Most Wholesome (Max Positive Sentiment)
+                wholesome_msg = max(user_msgs, key=lambda x: getattr(x[1].get("sentiment"), "score", 0.0) if x[1].get("sentiment") else 0.0, default=None)
+                if wholesome_msg and self._x_sent(wholesome_msg[1]) > 0.6 and wholesome_msg[0] not in [q.message_id for q in notable_quotes]:
+                     notable_quotes.append(NotableQuote(
+                         message_id=wholesome_msg[0], 
+                         text=wholesome_msg[1]["text"], 
+                         context="A Rare Wholesome Moment 💚"
+                     ))
+                     
             results.append(ParticipantScoring(
                 name=p_profile.name,
                 dominance=dominance,
@@ -206,10 +254,17 @@ class ScoringEngine:
                 main_character_energy=mce,
                 gaslighting_index=gaslighting_index,
                 red_flag_score=red_flag_score,
-                badges=badges
+                badges=badges,
+                notable_quotes=notable_quotes
             ))
             
         return results
+
+    # Helpers for quote extraction
+    def _x_tox(self, x): return getattr(x.get("toxicity"), "score", 0.0) if x.get("toxicity") else 0.0
+    def _x_pa(self, x): return getattr(x.get("tonality"), "passive_aggression_score", 0.0) if x.get("tonality") else 0.0
+    def _x_dry(self, x): return getattr(x.get("tonality"), "dryness_score", 0.0) if x.get("tonality") else 0.0
+    def _x_sent(self, x): return getattr(x.get("sentiment"), "score", 0.0) if x.get("sentiment") else 0.0
 
     def _calculate_segment_metrics(
         self, topics, sentiment, toxicity, tonality, speakers, msg_map

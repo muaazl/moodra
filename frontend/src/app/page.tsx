@@ -48,21 +48,21 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#020205] text-zinc-50 selection:bg-zinc-500/30">
-      {/* Background Glow */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-zinc-600/20 blur-[120px] rounded-full" />
-        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] bg-zinc-600/10 blur-[120px] rounded-full" />
-      </div>
+    <main className="min-h-screen bg-[var(--color-wa-bg)] text-zinc-900 selection:bg-[var(--color-wa-green)]/30 relative">
+      {/* WhatsApp Doodle Background */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.03] z-[0]" 
+        style={{ backgroundImage: 'url(/whatsapp_bg.png)', backgroundSize: '400px' }}
+      />
 
       <div className="relative z-10 container mx-auto px-4 py-12">
         {/* Header */}
         <header className="flex items-center justify-between mb-16">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-zinc-600 flex items-center justify-center shadow-[0_0_15px_rgba(79,70,229,0.5)]">
-              <MessageSquare className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--color-wa-green)] flex items-center justify-center shadow-sm">
+              <MessageSquare className="w-5 h-5 text-white fill-current" />
             </div>
-            <span className="text-xl font-black tracking-tighter">EXPOSE<span className="text-zinc-400">CHAT</span></span>
+            <span className="text-xl font-black tracking-tighter text-zinc-800">EXPOSE<span className="text-[var(--color-wa-green)]">CHAT</span></span>
           </div>
           <div className="hidden sm:flex items-center space-x-6">
             <PrivacyShield />
@@ -79,14 +79,14 @@ export default function Home() {
               className="max-w-4xl mx-auto space-y-12"
             >
               <div className="text-center space-y-4">
-                <Badge variant="outline" className="border-zinc-500/30 text-zinc-400 bg-zinc-500/5 px-4 py-1 rounded-full mb-4">
-                  <Sparkles className="w-3 h-3 mr-2" />
+                <Badge variant="outline" className="border-[var(--color-wa-green)]/30 text-[var(--color-wa-dark)] bg-[var(--color-wa-green)]/10 px-4 py-1 rounded-full mb-4 font-bold">
+                  <Sparkles className="w-3 h-3 mr-2 text-[var(--color-wa-green)]" />
                   AI-Powered Conversational Intelligence
                 </Badge>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tight bg-gradient-to-b from-white to-zinc-300/40 bg-clip-text text-transparent leading-[1.1]">
-                  What does your chat <br /> really say about you?
+                <h1 className="text-5xl md:text-7xl font-black tracking-tight text-zinc-900 leading-[1.1]">
+                  What does your chat <br /> <span className="text-[var(--color-wa-teal)]">really say</span> about you?
                 </h1>
-                <p className="text-lg text-zinc-200/50 max-w-2xl mx-auto font-medium">
+                <p className="text-lg text-zinc-600 max-w-2xl mx-auto font-medium">
                   Upload your WhatsApp export or paste a thread. Our local AI models expose the truth about sentiment, dominance, and hidden vibes—privately.
                 </p>
               </div>
@@ -111,10 +111,10 @@ export default function Home() {
                   { title: "Emotional Flow", desc: "Tension & Sentiment tracking", icon: MessageSquare },
                   { title: "Topic Analysis", desc: "What are you actually talking about?", icon: Shield },
                 ].map((feature, i) => (
-                  <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-3">
-                    <feature.icon className="w-6 h-6 text-zinc-400" />
-                    <h3 className="font-bold text-white">{feature.title}</h3>
-                    <p className="text-sm text-zinc-300/40 leading-relaxed">{feature.desc}</p>
+                  <div key={i} className="p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-black/5 shadow-sm space-y-3">
+                    <feature.icon className="w-6 h-6 text-[var(--color-wa-green)]" />
+                    <h3 className="font-bold text-zinc-800">{feature.title}</h3>
+                    <p className="text-sm text-zinc-500 leading-relaxed font-medium">{feature.desc}</p>
                   </div>
                 ))}
               </div>
@@ -132,13 +132,13 @@ export default function Home() {
               className="space-y-8"
             >
               {/* Result Header */}
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-8 border-b border-zinc-500/10">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-8 border-b border-black/5">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <h2 className="text-3xl font-black text-white">The Analysis Result</h2>
-                    <Badge className="bg-zinc-600 text-white border-none">{result.overall_mood}</Badge>
+                    <h2 className="text-3xl font-black text-zinc-900">The Analysis Result</h2>
+                    <Badge className="bg-[var(--color-wa-teal)] text-white hover:bg-[var(--color-wa-dark)] border-none font-bold">{result.overall_mood}</Badge>
                   </div>
-                  <p className="text-zinc-200/50 max-w-2xl font-medium">{result.overall_summary}</p>
+                  <p className="text-zinc-600 max-w-2xl font-medium text-lg leading-relaxed">{result.overall_summary}</p>
                   
                   {result.roast_summary && (
                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl max-w-2xl relative overflow-hidden">
@@ -151,7 +151,7 @@ export default function Home() {
                   )}
                 </div>
                 <div className="flex items-center space-x-3 flex-shrink-0">
-                  <Button variant="outline" className="border-zinc-500/20 bg-zinc-500/5 hover:bg-zinc-500/10 text-zinc-200" onClick={handleReset}>
+                  <Button variant="outline" className="border-black/10 bg-white/50 hover:bg-white text-zinc-700 shadow-sm" onClick={handleReset}>
                     <RefreshCcw className="w-4 h-4 mr-2" />
                     Reset
                   </Button>
@@ -161,13 +161,13 @@ export default function Home() {
 
               {/* Global Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-6 rounded-2xl bg-zinc-500/5 border border-zinc-500/10">
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Health</p>
-                  <p className="text-3xl font-black text-white">{Math.round(result.global_metrics.conversation_health * 100)}%</p>
+                <div className="p-6 rounded-2xl bg-white border border-black/5 shadow-sm text-center md:text-left">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Health</p>
+                  <p className="text-3xl font-black text-[var(--color-wa-dark)]">{Math.round(result.global_metrics.conversation_health * 100)}%</p>
                 </div>
-                <div className="p-6 rounded-2xl bg-zinc-500/5 border border-zinc-500/10">
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Messages</p>
-                  <p className="text-3xl font-black text-white">{result.global_metrics.total_messages}</p>
+                <div className="p-6 rounded-2xl bg-white border border-black/5 shadow-sm text-center md:text-left">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Messages</p>
+                  <p className="text-3xl font-black text-[var(--color-wa-teal)]">{result.global_metrics.total_messages}</p>
                 </div>
               </div>
 
@@ -184,18 +184,19 @@ export default function Home() {
               {/* Standout Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {result.standout_cards.map((card, i) => (
-                  <Card key={i} className="bg-white/5 border-white/5 hover:bg-white/10 transition-colors">
-                    <CardContent className="p-6 space-y-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        card.type === 'award' ? 'bg-zinc-500/20 text-zinc-400' :
-                        card.type === 'red_flag' ? 'bg-zinc-500/20 text-zinc-400' :
-                        'bg-zinc-500/20 text-zinc-400'
+                  <Card key={i} className="bg-[#f0f2f5] border-black/5 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-wa-green)]/10 rounded-bl-[100px] -z-0"></div>
+                    <CardContent className="p-6 space-y-4 relative z-10">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${
+                        card.type === 'award' ? 'bg-yellow-100 text-yellow-600' :
+                        card.type === 'red_flag' ? 'bg-red-100 text-red-600' :
+                        'bg-blue-100 text-blue-600'
                       }`}>
-                        <Sparkles className="w-6 h-6" />
+                        <Sparkles className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="font-bold text-white text-lg">{card.title}</h4>
-                        <p className="text-sm text-zinc-200/50 leading-relaxed font-medium">
+                        <h4 className="font-bold text-zinc-800 text-lg">{card.title}</h4>
+                        <p className="text-sm text-zinc-600 leading-relaxed font-medium">
                           {card.description}
                         </p>
                       </div>

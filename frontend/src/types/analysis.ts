@@ -5,6 +5,12 @@ export interface ScoreMetadata {
   confidence: number;
 }
 
+export interface NotableQuote {
+  message_id: number | null;
+  text: string;
+  context: string;
+}
+
 export interface ParticipantScoring {
   name: string;
   dominance: ScoreMetadata;
@@ -14,6 +20,7 @@ export interface ParticipantScoring {
   gaslighting_index: ScoreMetadata;
   red_flag_score: ScoreMetadata;
   badges: string[];
+  notable_quotes: NotableQuote[];
 }
 
 export interface SegmentScoring {

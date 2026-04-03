@@ -5,6 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-wa-bg: #efeae2;
+  --color-wa-green: #25D366;
+  --color-wa-teal: #128C7E;
+  --color-wa-dark: #075E54;
+  --color-wa-bubble-in: #ffffff;
+  --color-wa-bubble-out: #d9fdd3;
+  --color-wa-text-primary: #111b21;
+  --color-wa-text-secondary: #667781;
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
@@ -49,8 +58,8 @@
 }
 
 :root {
-  --background: oklch(0.98 0 0); /* Off white */
-  --foreground: oklch(0.1 0 0);
+  --background: oklch(0.96 0.01 90); /* Was Off white oklch(0.98 0 0), now #efeae2 slightly warmer */
+  --foreground: oklch(0.15 0 0); /* Off black */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.1 0 0);
   --popover: oklch(1 0 0);
