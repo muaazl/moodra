@@ -93,8 +93,8 @@ def test_scoring_engine_flow(mock_analysis_data):
     assert alice.dominance.value > bob.dominance.value
     assert "The Driver" in alice.badges
     
-    # Bob should be drier
-    assert bob.dry_texting.value > alice.dry_texting.value
+    # Bob should be drier (lower effort in the current mapping where dry=effort)
+    assert bob.effort_level.value > alice.effort_level.value
     
     # Check segments
     assert len(result.segments) == 2

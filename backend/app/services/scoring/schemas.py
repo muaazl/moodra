@@ -18,11 +18,23 @@ class ParticipantScoring(BaseModel):
     """High-level metrics for a single participant."""
     name: str
     dominance: ScoreMetadata
-    dry_texting: ScoreMetadata
-    passive_aggression: ScoreMetadata
-    main_character_energy: ScoreMetadata
-    gaslighting_index: ScoreMetadata
+    effort_level: ScoreMetadata
+    hidden_attitude: ScoreMetadata
+    self_focus: ScoreMetadata
+    manipulation_level: ScoreMetadata
     red_flag_score: ScoreMetadata
+    
+    # Group Attributes
+    peacemaker_index: ScoreMetadata
+    instigator_score: ScoreMetadata
+    ghost_level: ScoreMetadata
+    yap_score: ScoreMetadata
+    clown_factor: ScoreMetadata
+    
+    # Dyad Attributes
+    simp_level: ScoreMetadata
+    response_effort: ScoreMetadata
+    apology_rate: ScoreMetadata
     
     # Simple list of "badges" or "labels" for the UI
     badges: List[str] = Field(default_factory=list)
@@ -48,7 +60,7 @@ class StandoutCard(BaseModel):
     icon_hint: str # e.g. "crown", "fire", "ice-cube"
 
 class ScoringResponse(BaseModel):
-    """The final aggregate output of the Expose The Chat engine."""
+    """The final aggregate output of the Moodra engine."""
     overall_summary: str
     roast_summary: str
     overall_mood: str

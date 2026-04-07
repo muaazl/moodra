@@ -147,14 +147,14 @@ class ScoringEngine:
             dry_val = p_tonality.avg_dryness if p_tonality else 0.0
             pa_val = p_tonality.avg_passive_aggression if p_tonality else 0.0
             
-            dryness = ScoreMetadata(
+            effort_level = ScoreMetadata(
                 value=dry_val,
                 label=self._get_label_for_score(dry_val, ["Warm", "Normal", "Direct", "Dry AF"]),
                 explanation="Based on word count, punctuation usage, and response latency.",
                 confidence=0.8
             )
             
-            passive_aggression = ScoreMetadata(
+            hidden_attitude = ScoreMetadata(
                 value=pa_val,
                 label=self._get_label_for_score(pa_val, ["Chill", "Direct", "Slightly Edgy", "Highly P.A."]),
                 explanation="Calculated by mismatch between sentiment and tone signals.",
@@ -165,7 +165,7 @@ class ScoringEngine:
             mention_ratio = p_profile.mention_count / (total_msgs * 0.1 + 1)
             mce_val = (dom_val * 0.6 + min(1.0, mention_ratio * 2) * 0.4)
             
-            mce = ScoreMetadata(
+            self_focus = ScoreMetadata(
                 value=mce_val,
                 label=self._get_label_for_score(mce_val, ["NPC", "Supporting", "Main Story", "The Protagonist"]),
                 explanation="A combination of how much they speak and how much they are the subject of conversation.",
@@ -175,13 +175,13 @@ class ScoringEngine:
             # D. Badges
             badges = []
             if dom_val > 0.7: badges.append("The Driver")
-            if dry_val > 0.6: badges.append("The Brick Wall")
-            if pa_val > 0.6: badges.append("Passive-Aggressive King/Queen")
-            if mce_val > 0.8: badges.append("Main Character")
+            if dry_val > 0.6: badges.append("Very Dry")
+            if pa_val > 0.6: badges.append("Hidden Attitude")
+            if mce_val > 0.8: badges.append("Self Focus")
             
             # E. Gaslighting Index (High Dominance + High PA + Low variability -> confident manipulation)
             gaslight_val = (dom_val * 0.4) + (pa_val * 0.6)
-            gaslighting_index = ScoreMetadata(
+            manipulation_level = ScoreMetadata(
                 value=gaslight_val,
                 label=self._get_label_for_score(gaslight_val, ["Innocent", "Slightly Sus", "Manipulative", "Master Gaslighter"]),
                 explanation="Calculated via combination of conversational dominance and latent passive-aggression.",
@@ -200,10 +200,42 @@ class ScoringEngine:
                 confidence=0.8
             )
             
+            # Group Attributes calculations
+            p_sent_score = sum(getattr(msg_map.get(m, {}).get("sentiment"), "score", 0.0) for m in range(max(1, total_msgs)) if msg_map.get(m, {}).get("sender") == p_profile.name)
+            p_sent_avg = p_sent_score / max(1, p_profile.messages_sent)
+            
+            pm_val = max(0.0, (1.0 - tox_val) * (0.5 + p_sent_avg * 0.5))
+            peacemaker_index = ScoreMetadata(value=pm_val, label=self._get_label_for_score(pm_val, ["Stirrer", "Neutral", "De-escalator", "The UN"]), explanation="Attempts to restore peace.", confidence=0.6)
+            
+            inst_val = min(1.0, tox_val * dom_val * 1.5)
+            instigator_score = ScoreMetadata(value=inst_val, label=self._get_label_for_score(inst_val, ["Peaceful", "Slightly Messy", "Pot Stirrer", "Chaos Agent"]), explanation="Generates conflict and engagement spikes.", confidence=0.7)
+            
+            ghost_val = max(0.0, 1.0 - dom_val)
+            ghost_level = ScoreMetadata(value=ghost_val, label=self._get_label_for_score(ghost_val, ["Always There", "Occasional", "Rare Appearance", "The Ghost"]), explanation="Present but rarely speaks.", confidence=0.8)
+            
+            yap_val = min(1.0, word_ratio * 2.0)
+            yap_score = ScoreMetadata(value=yap_val, label=self._get_label_for_score(yap_val, ["Silent", "Talkative", "Yapper", "Chief Yapping Officer"]), explanation="High word volume.", confidence=0.9)
+            
+            clown_val = min(1.0, (pa_val * 0.2 + p_sent_avg * 0.5 + dom_val * 0.3) * 1.5)
+            clown_factor = ScoreMetadata(value=clown_val, label=self._get_label_for_score(clown_val, ["Serious", "Casual", "Joker", "Meme Lord"]), explanation="Humor and comedic relief.", confidence=0.6)
+            
+            # Dyad Attributes calculations
+            simp_val = max(0.0, p_sent_avg * dom_val * 1.2)
+            simp_level = ScoreMetadata(value=simp_val, label=self._get_label_for_score(simp_val, ["Independent", "Caring", "Devoted", "Mega Simp"]), explanation="High affection output.", confidence=0.7)
+            
+            resp_val = max(0.0, 1.0 - dry_val)
+            response_effort = ScoreMetadata(value=resp_val, label=self._get_label_for_score(resp_val, ["One Word", "Basic", "Thoughtful", "Paragraphs"]), explanation="Effort placed in replies.", confidence=0.8)
+            
+            apology_rate = ScoreMetadata(value=0.1, label="Average", explanation="Apology frequency", confidence=0.5)
+
             # G. Badges Addition
             if gaslight_val > 0.7: badges.append("The Gaslighter")
             if rf_val > 0.8: badges.append("Walking Red Flag")
             elif rf_val < 0.2: badges.append("Green Flag Status")
+            if yap_val > 0.8: badges.append("CEO of Yapping")
+            if inst_val > 0.7: badges.append("Drama Starter")
+            if ghost_val > 0.8: badges.append("The Ghost")
+            if pm_val > 0.7: badges.append("The Peacemaker")
             
             # H. Extract Notable Quotes (The Receipts)
             notable_quotes = []
@@ -228,13 +260,13 @@ class ScoringEngine:
                          context="Passive Aggression 🙄"
                      ))
 
-                # 3. The Brick Wall (Driest text, filter short texts)
+                # 3. Very Dry (filter short texts)
                 dry_msg = max(user_msgs, key=lambda x: getattr(x[1].get("tonality"), "dryness_score", 0.0) if x[1].get("tonality") else 0.0, default=None)
                 if dry_msg and self._x_dry(dry_msg[1]) > 0.5 and dry_msg[0] not in [q.message_id for q in notable_quotes]:
                      notable_quotes.append(NotableQuote(
                          message_id=dry_msg[0], 
                          text=dry_msg[1]["text"], 
-                         context="The Brick Wall 🧱"
+                         context="Very Dry 🌵"
                      ))
                      
                 # 4. Most Wholesome (Max Positive Sentiment)
@@ -249,11 +281,19 @@ class ScoringEngine:
             results.append(ParticipantScoring(
                 name=p_profile.name,
                 dominance=dominance,
-                dry_texting=dryness,
-                passive_aggression=passive_aggression,
-                main_character_energy=mce,
-                gaslighting_index=gaslighting_index,
+                effort_level=effort_level,
+                hidden_attitude=hidden_attitude,
+                self_focus=self_focus,
+                manipulation_level=manipulation_level,
                 red_flag_score=red_flag_score,
+                peacemaker_index=peacemaker_index,
+                instigator_score=instigator_score,
+                ghost_level=ghost_level,
+                yap_score=yap_score,
+                clown_factor=clown_factor,
+                simp_level=simp_level,
+                response_effort=response_effort,
+                apology_rate=apology_rate,
                 badges=badges,
                 notable_quotes=notable_quotes
             ))
@@ -325,24 +365,24 @@ class ScoringEngine:
     def _generate_standout_cards(self, participants, segments, sentiment, toxicity) -> List[StandoutCard]:
         cards = []
         # Example achievement
-        top_mce = max(participants, key=lambda x: x.main_character_energy.value)
-        if top_mce.main_character_energy.value > 0.5:
+        top_mce = max(participants, key=lambda x: x.self_focus.value, default=None)
+        if top_mce and top_mce.self_focus.value > 0.5:
              cards.append(StandoutCard(
                 type="award",
-                title="Main Character Energy",
+                title="The Center of Attention",
                 recipient=top_mce.name,
-                description="This chat was basically their monologue. Everyone else is just an extra.",
+                description="This conversation was basically their solo performance. Everyone else was just listening.",
                 icon_hint="crown"
             ))
              
         # Example red flag
-        most_dry = max(participants, key=lambda x: x.dry_texting.value)
-        if most_dry.dry_texting.value > 0.6:
+        most_dry = max(participants, key=lambda x: x.effort_level.value)
+        if most_dry.effort_level.value > 0.6:
             cards.append(StandoutCard(
                 type="red_flag",
-                title="Ghost in the Making",
+                title="The Silent Treatment",
                 recipient=most_dry.name,
-                description="Sending 'k' is a lifestyle choice here. Response energy is below freezing.",
+                description="Response energy is extremely low. Talking to them feels like sending messages into a void.",
                 icon_hint="ice-cube"
             ))
 
@@ -375,13 +415,13 @@ class ScoringEngine:
         else:
             roast = "Y'all are actually kinda boring. "
 
-        most_dry = max(participant_scores, key=lambda x: x.dry_texting.value, default=None)
-        if most_dry and most_dry.dry_texting.value > 0.6:
-            roast += f"Also, talking to {most_dry.name} is like talking to a brick wall that occasionaly sighs."
+        most_dry = max(participant_scores, key=lambda x: x.effort_level.value, default=None)
+        if most_dry and most_dry.effort_level.value > 0.6:
+            roast += f" Also, talking to {most_dry.name} is like talking to a wall that occasionally sighs."
             
-        gaslighter = max(participant_scores, key=lambda x: x.gaslighting_index.value, default=None)
-        if gaslighter and gaslighter.gaslighting_index.value > 0.7:
-            roast += f" {gaslighter.name} is lowkey gaslighting everyone and they think we don't notice."
+        manipulator = max(participant_scores, key=lambda x: x.manipulation_level.value, default=None)
+        if manipulator and manipulator.manipulation_level.value > 0.7:
+            roast += f" {manipulator.name} is lowkey manipulating everyone and they think we don't notice."
 
         if not roast.strip():
             roast = "Honestly, this chat is so aggressively mid there's almost nothing to roast."

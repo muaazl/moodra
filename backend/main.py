@@ -10,7 +10,7 @@ setup_privacy_logging(level=logging.INFO)
 logger = logging.getLogger("api_main")
 
 app = FastAPI(
-    title="Expose The Chat - Analyzer Service",
+    title="Moodra - Analyzer Service",
     description="Privacy-first, local-only NLP engine for WhatsApp chat analysis.",
     version="1.0.0"
 )
@@ -35,11 +35,11 @@ async def health_check():
     """Minimal health check to verify backend is up."""
     return {
         "status": "online",
-        "service": "Expose The Chat Engine",
+        "service": "Moodra Engine",
         "timestamp": None
     }
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting Expose The Chat Engine (Local Mode)")
+    logger.info("Starting Moodra Engine (Local Mode)")
     uvicorn.run(app, host="0.0.0.0", port=8000, access_log=True)

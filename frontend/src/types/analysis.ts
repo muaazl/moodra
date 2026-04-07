@@ -14,11 +14,19 @@ export interface NotableQuote {
 export interface ParticipantScoring {
   name: string;
   dominance: ScoreMetadata;
-  dry_texting: ScoreMetadata;
-  passive_aggression: ScoreMetadata;
-  main_character_energy: ScoreMetadata;
-  gaslighting_index: ScoreMetadata;
+  effort_level: ScoreMetadata;
+  hidden_attitude: ScoreMetadata;
+  self_focus: ScoreMetadata;
+  manipulation_level: ScoreMetadata;
   red_flag_score: ScoreMetadata;
+  peacemaker_index?: ScoreMetadata;
+  instigator_score?: ScoreMetadata;
+  ghost_level?: ScoreMetadata;
+  yap_score?: ScoreMetadata;
+  clown_factor?: ScoreMetadata;
+  simp_level?: ScoreMetadata;
+  response_effort?: ScoreMetadata;
+  apology_rate?: ScoreMetadata;
   badges: string[];
   notable_quotes: NotableQuote[];
 }

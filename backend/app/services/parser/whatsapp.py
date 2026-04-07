@@ -49,6 +49,33 @@ class WhatsAppParser:
     def _is_media(self, content: str) -> bool:
         """Check if message is a media placeholder."""
         return any(placeholder.lower() in content.lower() for placeholder in MEDIA_PLACEHOLDERS)
+        
+    def _is_valid_participant(self, sender: str) -> bool:
+        """Filter out system messages that got parsed as senders."""
+        if not sender: return False
+        if len(sender) > 40: return False  # Typical names shouldn't be this long
+        invalid_phrases = [
+            " added ", " removed ", " changed the subject", 
+            " left", " joined ", " created group", " messages to this group",
+            " changed the group", " deleted this group"
+        ]
+        lower_s = sender.lower()
+        if any(p in lower_s for p in invalid_phrases): 
+            return False
+        return True
+    
+    def _is_actually_system_content(self, content: str) -> bool:
+        """Checks if content looks like a system notification (e.g. 'User joined')."""
+        system_verbs = [
+            " joined", " left", " added ", " removed ", " changed the group",
+            " changed the subject", " created group", " messages to this group",
+            " pinned a message", " deleted a message"
+        ]
+        lower_c = content.lower()
+        # System messages are usually short and contain these verbs
+        if len(content) < 100 and any(v in lower_c for v in system_verbs):
+            return True
+        return False
 
     def parse_text(self, text: str) -> ParseResult:
         """Main entry point to parse a block of text."""
@@ -77,14 +104,15 @@ class WhatsAppParser:
                     dt = self._parse_timestamp(ts_str)
                     
                     if dt:
+                        is_actually_system = is_system or not self._is_valid_participant(sender) or self._is_actually_system_content(content)
                         current_msg_data = {
                             "timestamp": dt,
-                            "sender": sender,
+                            "sender": sender if not is_actually_system else None,
                             "content": content,
-                            "is_system": is_system
+                            "is_system": is_actually_system
                         }
-                        if sender:
-                            participants.add(sender)
+                        if current_msg_data["sender"]:
+                            participants.add(current_msg_data["sender"])
                     else:
                         warnings.append(ParseWarning(line_number=i, content=line, reason="Invalid date format"))
                 else:

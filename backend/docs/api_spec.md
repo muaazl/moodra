@@ -1,4 +1,4 @@
-# Expose The Chat - API Specification
+# Moodra - API Specification
 
 ## 1. Core Endpoints
 

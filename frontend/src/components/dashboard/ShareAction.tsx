@@ -33,7 +33,7 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
 
       // Simple browser download trigger
       const link = document.createElement('a');
-      link.download = `expose-chat-vibe-${Date.now()}.png`;
+      link.download = `moodra-vibe-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
       
@@ -48,15 +48,23 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
 
   return (
     <>
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center justify-end space-x-3 w-full sm:w-auto">
+        <Button 
+          variant="outline"
+          onClick={() => window.print()}
+          className="border-zinc-300 text-zinc-700 bg-white hover:bg-zinc-50 shadow-sm font-bold"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Save PDF
+        </Button>
         <Button 
           disabled={isGenerating}
           onClick={handleExport}
           className={`${
             isFinished 
-            ? 'bg-zinc-600 hover:bg-zinc-700' 
-            : 'bg-zinc-600 hover:bg-zinc-500'
-          } text-white shadow-lg shadow-zinc-500/25 transition-all w-[140px] font-bold`}
+            ? 'bg-[#25D366] hover:bg-[#128C7E]' 
+            : 'bg-zinc-800 hover:bg-zinc-700'
+          } text-white shadow-lg transition-all font-bold min-w-[140px]`}
         >
           {isGenerating ? (
             <>

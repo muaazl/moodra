@@ -75,26 +75,26 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
       </CardHeader>
 
       <CardContent className="pt-6 space-y-6 relative">
-        <div className="grid grid-cols-1 gap-5 bg-zinc-50/50 p-4 rounded-2xl border border-black/5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-zinc-50/50 p-4 rounded-2xl border border-black/5">
           <ScoreMetric
             subLabel="Presence"
-            label="Main Character Energy"
+            label="Self Focus"
             Icon={Zap}
-            data={participant.main_character_energy}
+            data={participant.self_focus}
             color="bg-[#128C7E]"
           />
           <ScoreMetric
             subLabel="Manipulation"
-            label="Gaslighting Index"
+            label="Manipulation Level"
             Icon={Ghost}
-            data={participant.gaslighting_index}
+            data={participant.manipulation_level}
             color="bg-purple-500"
           />
           <ScoreMetric
             subLabel="Dryness"
-            label="Desert Vibes"
+            label="Effort Level"
             Icon={Droplets}
-            data={participant.dry_texting}
+            data={participant.effort_level}
             color="bg-amber-500"
           />
           <ScoreMetric
@@ -105,6 +105,26 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
             color="bg-red-500"
           />
         </div>
+
+        {/* Dynamic Group/Dyad Attributes */}
+        {(participant.yap_score || participant.simp_level) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-zinc-50/50 p-4 rounded-2xl border border-black/5 mt-4">
+            {participant.yap_score && (
+              <>
+                <ScoreMetric subLabel="Volume" label="Yap Score" Icon={MessageSquare} data={participant.yap_score} color="bg-blue-500" />
+                <ScoreMetric subLabel="Drama" label="Instigator Score" Icon={Zap} data={participant.instigator_score!} color="bg-red-400" />
+                <ScoreMetric subLabel="Harmony" label="Peacemaker Index" Icon={User} data={participant.peacemaker_index!} color="bg-green-400" />
+                <ScoreMetric subLabel="Presence" label="Ghost Level" Icon={Ghost} data={participant.ghost_level!} color="bg-zinc-400" />
+              </>
+            )}
+            {participant.simp_level && (
+              <>
+                <ScoreMetric subLabel="Devotion" label="Simp Level" Icon={User} data={participant.simp_level} color="bg-pink-400" />
+                <ScoreMetric subLabel="Energy" label="Response Effort" Icon={MessageSquare} data={participant.response_effort!} color="bg-blue-400" />
+              </>
+            )}
+          </div>
+        )}
 
         {/* The Receipts Section */}
         <div className="mt-8 space-y-4">

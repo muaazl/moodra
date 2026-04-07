@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Expose The Chat | Privacy-First Analytics",
+  title: "Moodra",
   description: "Local, privacy-first WhatsApp chat analyzer. Zero cloud dependency.",
 };
 

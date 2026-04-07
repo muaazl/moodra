@@ -92,39 +92,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
-  --background: oklch(0.05 0 0); /* Almost black */
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.1 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.1 0 0);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.98 0 0);
-  --primary-foreground: oklch(0.05 0 0);
-  --secondary: oklch(0.15 0 0);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.15 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.15 0 0);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/* Dark mode removed to enforce the WhatsApp-inspired light theme. */
 
 @layer base {
   * {
@@ -135,5 +103,36 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: var(--color-wa-bg) !important;
+  }
+  
+  /* Hide the UI chrome */
+  header, footer, button, .no-print {
+    display: none !important;
+  }
+
+  /* Prevent page breaks inside cards */
+  .grid > div, .card, .p-6 {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Remove shadow and backdrop-blur for crisper PDF export */
+  * {
+    backdrop-filter: none !important;
+    text-shadow: none !important;
+  }
+  
+  main {
+    margin: 0;
+    padding: 20px;
+    background: var(--color-wa-bg) !important;
   }
 }

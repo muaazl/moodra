@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PrivacyShield } from '@/components/privacy/PrivacyShield';
-import { PrivacyBanner } from '@/components/privacy/PrivacyBanner';
 
 export default function Home() {
   const [result, setResult] = useState<ScoringResponse | null>(null);
@@ -62,7 +61,7 @@ export default function Home() {
             <div className="w-8 h-8 rounded-lg bg-[var(--color-wa-green)] flex items-center justify-center shadow-sm">
               <MessageSquare className="w-5 h-5 text-white fill-current" />
             </div>
-            <span className="text-xl font-black tracking-tighter text-zinc-800">EXPOSE<span className="text-[var(--color-wa-green)]">CHAT</span></span>
+            <span className="text-xl font-black tracking-tighter text-zinc-800">Moodra</span>
           </div>
           <div className="hidden sm:flex items-center space-x-6">
             <PrivacyShield />
@@ -118,10 +117,6 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-
-              <div className="pt-24 -mx-4">
-                <PrivacyBanner />
-              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -141,12 +136,12 @@ export default function Home() {
                   <p className="text-zinc-600 max-w-2xl font-medium text-lg leading-relaxed">{result.overall_summary}</p>
                   
                   {result.roast_summary && (
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl max-w-2xl relative overflow-hidden">
+                    <div className="p-4 bg-red-50 rounded-xl max-w-2xl relative overflow-hidden border border-red-200">
                        <div className="absolute top-0 right-0 p-2 opacity-10">
                          <Flame size={48} className="text-red-500" />
                        </div>
-                       <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1 relative z-10">The Brutal Truth</p>
-                       <p className="text-sm font-medium text-red-100/90 relative z-10">{result.roast_summary}</p>
+                       <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1 relative z-10">The Brutal Truth</p>
+                       <p className="text-sm font-medium text-red-800 relative z-10">{result.roast_summary}</p>
                     </div>
                   )}
                 </div>
@@ -209,8 +204,8 @@ export default function Home() {
         </AnimatePresence>
 
         <footer className="mt-24 pt-8 border-t border-zinc-500/5 text-center">
-          <p className="text-[10px] font-bold text-zinc-300/20 uppercase tracking-[0.2em]">
-            EXPOSE THE CHAT • {new Date().getFullYear()} • PRIVACY FIRST AI
+          <p className="text-[10px] font-bold text-black-300/20 uppercase tracking-[0.2em]">
+            Moodra • {new Date().getFullYear()} • PRIVACY FIRST AI
           </p>
         </footer>
       </div>
