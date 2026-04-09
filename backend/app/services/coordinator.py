@@ -3,6 +3,7 @@ from datetime import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from sentence_transformers import SentenceTransformer
+import spacy
 
 from .parser import WhatsAppParser, ParseResult, RawMessage
 from .preprocessing import MessageCleaner, PreprocessingResult
@@ -55,15 +56,23 @@ class AnalysisCoordinator:
         # --- Shared embedding model (loaded once, used by two analyzers) ---
         # Note: SentenceTransformer(settings.TOPIC_MODEL) is NOT lazy, it loads immediately.
         # But Sentiment and Toxicity ARE lazy.
-        print(f"Initializing Moodra Analyzers (Model: {settings.TOPIC_MODEL})...")
+        print(f"Initializing Moodra Analyzers (Model: {settings.TOPIC_MODEL}, {settings.SPACY_MODEL})...")
         shared_embedder = SentenceTransformer(settings.TOPIC_MODEL)
 
+        # Shared spaCy model (loaded once, used by Cleaner, EntityExtractor, and TonalityAnalyzer)
+        try:
+            shared_nlp = spacy.load(settings.SPACY_MODEL)
+        except OSError:
+            import subprocess, sys
+            subprocess.check_call([sys.executable, "-m", "spacy", "download", settings.SPACY_MODEL])
+            shared_nlp = spacy.load(settings.SPACY_MODEL)
+
         self.parser = WhatsAppParser()
-        self.cleaner = MessageCleaner()
-        self.nlp = EntityExtractor()
+        self.cleaner = MessageCleaner(nlp=shared_nlp)
+        self.nlp = EntityExtractor(nlp=shared_nlp)
         self.sentiment = SentimentAnalyzer()
         self.toxicity = ToxicityAnalyzer()
-        self.tonality = TonalityAnalyzer()  # model-free: no embedder needed
+        self.tonality = TonalityAnalyzer(nlp=shared_nlp)  # model-free: no embedder needed
         self.topics = TopicAnalyzer(embedder=shared_embedder)
         self.scoring = ScoringEngine()
 

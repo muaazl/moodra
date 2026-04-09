@@ -1,6 +1,6 @@
 import re
 import emoji
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Optional
 import pandas as pd
 import numpy as np
 
@@ -20,14 +20,17 @@ from .constants import (
 class MessageCleaner:
     """Preprocesses raw chat messages into analysis-ready formats."""
     
-    def __init__(self, model_name: str = "en_core_web_sm"):
+    def __init__(self, model_name: str = "en_core_web_sm", nlp: Optional[spacy.language.Language] = None):
         # Local spaCy model
-        try:
-            self.nlp = spacy.load(model_name)
-        except OSError:
-            # Revisit if model is missing, but assume it's downloaded in setup
-            # For now, just placeholder so code doesn't crash in-flight
-            self.nlp = None
+        if nlp is not None:
+            self.nlp = nlp
+        else:
+            try:
+                self.nlp = spacy.load(model_name)
+            except OSError:
+                # Revisit if model is missing, but assume it's downloaded in setup
+                # For now, just placeholder so code doesn't crash in-flight
+                self.nlp = None
             
     def _is_emoji(self, char: str) -> bool:
         """Check if a character is an emoji using the emoji library."""

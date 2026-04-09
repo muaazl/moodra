@@ -33,9 +33,10 @@ class TonalityAnalyzer:
         spacy_model: str = "en_core_web_sm",
         # embedder kwarg kept for backwards compat with coordinator but ignored
         embedder=None,
+        nlp: Optional[spacy.language.Language] = None,
     ):
         self.spacy_model = spacy_model
-        self._nlp = None
+        self._nlp = nlp
 
     # ------------------------------------------------------------------
     # Lazy loaders

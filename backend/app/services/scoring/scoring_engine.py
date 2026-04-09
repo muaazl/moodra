@@ -392,8 +392,8 @@ class ScoringEngine:
             ))
              
         # Example red flag
-        most_dry = max(participants, key=lambda x: x.effort_level.value)
-        if most_dry.effort_level.value > 0.6:
+        most_dry = max(participants, key=lambda x: x.effort_level.value, default=None)
+        if most_dry and most_dry.effort_level.value > 0.6:
             cards.append(StandoutCard(
                 type="red_flag",
                 title="The Silent Treatment",

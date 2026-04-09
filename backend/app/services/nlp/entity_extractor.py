@@ -18,16 +18,23 @@ class EntityExtractor:
       which processes all messages in one efficient batched pass.
     """
 
-    def __init__(self, model_name: str = settings.SPACY_MODEL, use_ner_for_mentions: bool = False):
+    def __init__(self, model_name: str = settings.SPACY_MODEL, use_ner_for_mentions: bool = False, nlp: Optional[spacy.language.Language] = None):
         self.use_ner_for_mentions = use_ner_for_mentions
-        try:
-            self.nlp = spacy.load(model_name)
-        except OSError:
-            import subprocess, sys
-            subprocess.check_call(
-                [sys.executable, "-m", "spacy", "download", model_name]
-            )
-            self.nlp = spacy.load(model_name)
+        self._model_name = model_name
+        self._nlp = nlp
+
+    @property
+    def nlp(self) -> spacy.language.Language:
+        if self._nlp is None:
+            try:
+                self._nlp = spacy.load(self._model_name)
+            except OSError:
+                import subprocess, sys
+                subprocess.check_call(
+                    [sys.executable, "-m", "spacy", "download", self._model_name]
+                )
+                self._nlp = spacy.load(self._model_name)
+        return self._nlp
 
     # ------------------------------------------------------------------
     # Main entry point
