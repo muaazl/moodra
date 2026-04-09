@@ -2,8 +2,8 @@
 
 import React from 'react';
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,11 +12,23 @@ import {
   Legend,
 } from 'recharts';
 import { TimelinePoint } from '@/types/analysis';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface TimelineChartProps {
   data: TimelinePoint[];
 }
+
+// Muted, professional palette for participant lines
+const LINE_COLORS = [
+  '#128C7E', // WhatsApp teal
+  '#075E54', // WhatsApp dark
+  '#6366f1', // Indigo
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#8b5cf6', // Purple
+  '#06b6d4', // Cyan
+  '#ec4899', // Pink
+];
 
 export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
   const [isMounted, setIsMounted] = React.useState(false);
@@ -25,73 +37,96 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
     setIsMounted(true);
   }, []);
 
+  if (!data || data.length === 0) return null;
+
+  // Extract participant names from the first data point
+  const participantNames = data[0]?.participant_volumes
+    ? Object.keys(data[0].participant_volumes)
+    : [];
+
+  // If no per-participant data, fall back to total volume
+  const hasParticipantData = participantNames.length > 0;
+
+  // Transform data for recharts — flatten participant_volumes into top-level keys
+  const chartData = data.map((point, i) => {
+    const entry: Record<string, any> = {
+      name: point.time.replace('Segment ', '#'),
+    };
+    if (hasParticipantData && point.participant_volumes) {
+      for (const name of participantNames) {
+        entry[name] = point.participant_volumes[name] || 0;
+      }
+    } else {
+      entry['Messages'] = point.volume;
+    }
+    return entry;
+  });
+
+  const lineKeys = hasParticipantData ? participantNames : ['Messages'];
+
   return (
-    <Card className="w-full bg-black/40 backdrop-blur-xl border-zinc-500/10 mb-8 overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between pb-6">
-        <div>
-          <CardTitle className="text-xl font-bold text-zinc-100 flex items-center space-x-2">
-            <span>Emotional Timeline</span>
-            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          </CardTitle>
-          <p className="text-sm text-zinc-300/60 mt-1">Sentiment and tension over the chat timeline</p>
+    <Card className="w-full bg-white/80 backdrop-blur-sm border-black/5 shadow-sm mb-8 overflow-hidden">
+      <CardContent className="p-6">
+        <div className="mb-1">
+          <h3 className="text-lg font-bold text-zinc-800">Chat Activity</h3>
+          <p className="text-sm text-zinc-500">
+            Who was talking and when — from start to end
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="p-0 sm:p-6">
-        <div className="h-[350px] w-full">
+
+        <div className="h-[300px] w-full mt-4">
           {isMounted ? (
             <ResponsiveContainer width="100%" height="100%" minHeight={0}>
-              <AreaChart
-                data={data}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              <LineChart
+                data={chartData}
+                margin={{ top: 10, right: 20, left: -10, bottom: 0 }}
               >
-                <defs>
-                  <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorTension" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#00000008" vertical={false} />
                 <XAxis
-                  dataKey="time"
-                  stroke="#6366f140"
-                  fontSize={12}
-                  tickFormatter={(val) => new Date(val).toLocaleDateString()}
+                  dataKey="name"
+                  stroke="#a1a1aa"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#e4e4e7' }}
                 />
-                <YAxis stroke="#6366f140" fontSize={12} />
+                <YAxis
+                  stroke="#a1a1aa"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  label={{ value: 'Messages', angle: -90, position: 'insideLeft', offset: 15, style: { fill: '#a1a1aa', fontSize: 11 } }}
+                />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0a0a0a',
-                    borderColor: '#6366f120',
-                    borderRadius: '12px',
-                    color: '#e0e7ff',
+                    backgroundColor: '#fafaf9',
+                    borderColor: '#e4e4e7',
+                    borderRadius: '10px',
+                    color: '#18181b',
+                    fontSize: '12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                   }}
-                  itemStyle={{ fontSize: '12px' }}
-                  cursor={{ stroke: '#6366f140', strokeWidth: 2 }}
+                  itemStyle={{ fontSize: '12px', padding: '2px 0' }}
+                  cursor={{ stroke: '#d4d4d8', strokeWidth: 1 }}
                 />
-                <Legend verticalAlign="top" height={36} iconType="circle" />
-                <Area
-                  type="monotone"
-                  dataKey="sentiment"
-                  name="Sentiment"
-                  stroke="#6366f1"
-                  fillOpacity={1}
-                  fill="url(#colorSentiment)"
-                  strokeWidth={3}
+                <Legend
+                  verticalAlign="top"
+                  height={36}
+                  iconType="plainline"
+                  wrapperStyle={{ fontSize: '12px', fontWeight: 600, color: '#3f3f46' }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="tension"
-                  name="Tension"
-                  stroke="#f43f5e"
-                  fillOpacity={1}
-                  fill="url(#colorTension)"
-                  strokeWidth={3}
-                />
-              </AreaChart>
+                {lineKeys.map((key, idx) => (
+                  <Line
+                    key={key}
+                    type="monotone"
+                    dataKey={key}
+                    name={key}
+                    stroke={LINE_COLORS[idx % LINE_COLORS.length]}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 4, strokeWidth: 0 }}
+                  />
+                ))}
+              </LineChart>
             </ResponsiveContainer>
           ) : (
             <div className="w-full h-full flex items-center justify-center">

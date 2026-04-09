@@ -2,13 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, ClipboardPaste, Sparkles, Wand2, ShieldCheck, History } from 'lucide-react';
+import { Upload, ClipboardPaste, Sparkles, Wand2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { AnalysisProgress } from './AnalysisProgress';
 
 interface ChatInputFormProps {
@@ -20,7 +18,6 @@ interface ChatInputFormProps {
 export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoading, estimatedDuration }) => {
   const [pastedText, setPastedText] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [anonymize, setAnonymize] = useState(false);
   const [mode, setMode] = useState<'paste' | 'upload'>('paste');
 
   const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -35,28 +32,42 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
 
   const isSubmitDisabled = isLoading || (mode === 'paste' ? !pastedText.trim() : !file);
 
+  // Estimate time based on input size
+  const getEstimatedTime = () => {
+    if (mode === 'paste' && pastedText.trim()) {
+      const est = Math.max(5, Math.ceil(pastedText.length / 5000) + 3);
+      return est;
+    }
+    if (mode === 'upload' && file) {
+      return Math.max(8, Math.ceil(file.size / 50000) + 5);
+    }
+    return null;
+  };
+
+  const estimatedTime = getEstimatedTime();
+
   const handleSubmit = async () => {
     if (isSubmitDisabled) return;
 
     if (mode === 'paste') {
-      onAnalyze(pastedText, null, anonymize);
+      onAnalyze(pastedText, null, false);
     } else if (file) {
-      onAnalyze(null, file, anonymize);
+      onAnalyze(null, file, false);
     }
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto overflow-hidden border-zinc-500/20 bg-black/40 backdrop-blur-xl">
-      <CardContent className="p-6">
+    <Card className="w-full max-w-2xl mx-auto overflow-hidden border-black/5 bg-white/70 backdrop-blur-sm shadow-sm">
+      <CardContent className="p-6 sm:p-8">
         <Tabs defaultValue="paste" onValueChange={(val) => setMode(val as 'paste' | 'upload')}>
-          <TabsList className="grid w-full grid-cols-2 mb-6 bg-zinc-900/10">
-            <TabsTrigger value="paste" className="data-[state=active]:bg-zinc-500/20">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/[0.03] rounded-xl h-11">
+            <TabsTrigger value="paste" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-zinc-600 rounded-lg text-sm font-semibold">
               <ClipboardPaste className="w-4 h-4 mr-2" />
-              Paste Transcript
+              Paste Chat
             </TabsTrigger>
-            <TabsTrigger value="upload" className="data-[state=active]:bg-zinc-500/20">
+            <TabsTrigger value="upload" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-zinc-600 rounded-lg text-sm font-semibold">
               <Upload className="w-4 h-4 mr-2" />
-              Upload .txt
+              Upload File
             </TabsTrigger>
           </TabsList>
 
@@ -71,31 +82,31 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
               {mode === 'paste' ? (
                 <TabsContent value="paste">
                   <Textarea
-                    placeholder="Paste your exported WhatsApp chat history here..."
-                    className="h-[220px] bg-black/40 border-zinc-500/10 focus-visible:ring-zinc-500/30 text-zinc-50 resize-none overflow-y-auto"
+                    placeholder="Paste your exported WhatsApp chat here..."
+                    className="h-[200px] bg-[var(--color-wa-bg)]/50 border-black/5 focus-visible:ring-[var(--color-wa-green)]/30 text-zinc-800 placeholder:text-zinc-400 resize-none overflow-y-auto rounded-xl text-sm"
                     value={pastedText}
                     onChange={handlePasteChange}
                   />
                 </TabsContent>
               ) : (
                 <TabsContent value="upload">
-                  <div className="flex flex-col items-center justify-center min-h-[220px] border-2 border-dashed border-zinc-500/20 rounded-lg bg-black/40 hover:bg-zinc-500/5 transition-colors cursor-pointer relative">
+                  <div className="flex flex-col items-center justify-center min-h-[200px] border-2 border-dashed border-black/8 rounded-xl bg-[var(--color-wa-bg)]/30 hover:bg-[var(--color-wa-bg)]/50 transition-colors cursor-pointer relative">
                     <input
                       type="file"
                       accept=".txt"
                       className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={handleFileChange}
                     />
-                    <div className="text-center space-y-4">
-                      <div className="p-4 rounded-full bg-zinc-500/10 mx-auto w-fit">
-                        <Upload className="w-8 h-8 text-zinc-400" />
+                    <div className="text-center space-y-3">
+                      <div className="p-3 rounded-full bg-black/[0.03] mx-auto w-fit">
+                        <Upload className="w-7 h-7 text-zinc-400" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-zinc-200">
-                          {file ? file.name : "Drag and drop your WhatsApp .txt export"}
+                        <p className="text-sm font-semibold text-zinc-700">
+                          {file ? file.name : "Drop your WhatsApp .txt export"}
                         </p>
-                        <p className="text-xs text-zinc-400/60 font-mono">
-                          (WhatsApp &gt; More &gt; Export Chat &gt; Without Media)
+                        <p className="text-xs text-zinc-400">
+                          WhatsApp → More → Export Chat → Without Media
                         </p>
                       </div>
                     </div>
@@ -106,31 +117,19 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
           </AnimatePresence>
         </Tabs>
 
-        <div className="mt-8 space-y-6">
-          <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-500/5 border border-zinc-500/10">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-zinc-500/10">
-                <ShieldCheck className="w-5 h-5 text-zinc-400" />
-              </div>
-              <div>
-                <Label htmlFor="anonymize" className="text-sm font-semibold text-zinc-100">
-                  Privacy Guard
-                </Label>
-                <p className="text-xs text-zinc-300/60">Anonymize all names before analysis</p>
-              </div>
+        <div className="mt-6 space-y-4">
+          {/* Estimated time indicator */}
+          {estimatedTime && !isLoading && (
+            <div className="flex items-center justify-center space-x-2 text-zinc-400">
+              <Clock className="w-3.5 h-3.5" />
+              <span className="text-xs font-medium">Estimated time: ~{estimatedTime}s</span>
             </div>
-            <Switch
-              id="anonymize"
-              checked={anonymize}
-              onCheckedChange={setAnonymize}
-              className="data-[state=checked]:bg-zinc-500"
-            />
-          </div>
+          )}
 
           <Button
             type="button"
             onClick={handleSubmit}
-            className="w-full h-14 text-lg font-bold bg-zinc-600 hover:bg-zinc-500 text-white shadow-none transition-all active:scale-[0.98] group relative overflow-hidden"
+            className="w-full h-12 text-base font-bold bg-[var(--color-wa-green)] hover:bg-[var(--color-wa-teal)] text-white shadow-none transition-all active:scale-[0.98] group relative overflow-hidden rounded-xl"
             disabled={isSubmitDisabled}
           >
              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
@@ -142,12 +141,12 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
                 >
                   <Sparkles className="w-5 h-5" />
                 </motion.div>
-                <span>Analyzing Drama...</span>
+                <span>Analyzing...</span>
               </div>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
                 <Wand2 className="w-5 h-5" />
-                <span>Expose Results</span>
+                <span>Analyze Chat</span>
               </div>
             )}
           </Button>
@@ -155,8 +154,8 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
           <AnalysisProgress isAnalyzing={isLoading} estimatedDuration={estimatedDuration} />
 
           {!isLoading && (
-            <p className="text-center text-[10px] text-zinc-300/40 uppercase tracking-widest font-mono pt-4">
-              100% Client-Side Processing • No Backend Storage • Ephemeral Analysis
+            <p className="text-center text-[10px] text-zinc-400 tracking-wide pt-1">
+              Your data stays on your device. Nothing is stored.
             </p>
           )}
         </div>

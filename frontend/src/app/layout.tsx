@@ -9,7 +9,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Moodra",
-  description: "Local, privacy-first WhatsApp chat analyzer. Zero cloud dependency.",
+  description: "Find out what your chats really say about you. Private & fun chat analyzer.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Zap, Droplets, Ghost, Flag, LucideIcon, MessageSquare, Quote } from 'lucide-react';
+import { User, MessageSquare, Quote } from 'lucide-react';
 
 interface ParticipantCardProps {
   participant: ParticipantScoring;
@@ -14,57 +14,86 @@ interface ParticipantCardProps {
 
 const ScoreMetric: React.FC<{
   label: string;
-  Icon: LucideIcon;
+  subLabel: string;
   data: ScoreMetadata;
   color: string;
-  subLabel: string;
-}> = ({ label, Icon, data, color, subLabel }) => {
-  const percentage = data.value * 100;
+}> = ({ label, subLabel, data, color }) => {
+  const percentage = Math.round(data.value * 100);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className={`p-1.5 rounded-md ${color} bg-opacity-10`}>
-            <Icon className={`w-4 h-4 ${color.replace('bg-', 'text-').replace('-500', '-600')}`} />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider">{subLabel}</span>
-            <p className="text-[10px] text-zinc-500 -mt-1">{label}</p>
-          </div>
+        <div>
+          <span className="text-xs font-bold text-zinc-700 uppercase tracking-wider">{subLabel}</span>
+          <p className="text-[10px] text-zinc-400">{label}</p>
         </div>
         <div className="text-right">
-          <span className="text-sm font-black text-zinc-800 font-mono">{Math.round(percentage)}%</span>
-          <p className={`text-[10px] font-bold ${color.replace('bg-', 'text-').replace('-500', '-600')}`}>{data.label}</p>
+          <span className="text-sm font-black text-zinc-800 font-mono">{percentage}%</span>
+          <p className={`text-[10px] font-bold ${color}`}>{data.label}</p>
         </div>
       </div>
-      <Progress value={percentage} className="h-1.5 bg-black/5" />
+      <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500`}
+          style={{
+            width: `${percentage}%`,
+            backgroundColor: color.includes('teal') ? '#128C7E'
+              : color.includes('purple') ? '#8b5cf6'
+              : color.includes('amber') ? '#f59e0b'
+              : color.includes('red') ? '#ef4444'
+              : color.includes('blue') ? '#3b82f6'
+              : color.includes('pink') ? '#ec4899'
+              : color.includes('green') ? '#25D366'
+              : color.includes('zinc') ? '#a1a1aa'
+              : '#128C7E'
+          }}
+        />
+      </div>
     </div>
   );
 };
 
 export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant }) => {
+  const rfScore = Math.round(participant.red_flag_score.value * 100);
+
+  // Overall verdict
+  let verdictLabel = 'Green Flag';
+  let verdictColor = 'text-[var(--color-wa-green)]';
+  let verdictBg = 'bg-[var(--color-wa-green)]/5 border-[var(--color-wa-green)]/15';
+  if (rfScore > 60) {
+    verdictLabel = 'Red Flag';
+    verdictColor = 'text-red-600';
+    verdictBg = 'bg-red-50 border-red-200';
+  } else if (rfScore > 35) {
+    verdictLabel = 'Yellow Flag';
+    verdictColor = 'text-amber-600';
+    verdictBg = 'bg-amber-50 border-amber-200';
+  }
+
   return (
-    <Card className="bg-white/80 backdrop-blur-xl border-black/5 overflow-hidden relative group hover:border-black/10 transition-all duration-300 shadow-sm">
+    <Card className="bg-white/80 backdrop-blur-sm border-black/5 overflow-hidden relative group hover:border-black/10 transition-all duration-300 shadow-sm">
       <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-5 transition-opacity pointer-events-none">
         <User size={120} strokeWidth={1} />
       </div>
 
       <CardHeader className="relative pb-0 pt-6">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-          <Avatar className="h-16 w-16 border-2 border-white shadow-sm ring-4 ring-[#25D366]/10">
-            <AvatarFallback className="bg-[#128C7E] text-white text-xl font-bold">
+          <Avatar className="h-14 w-14 border-2 border-white shadow-sm ring-4 ring-[var(--color-wa-green)]/10">
+            <AvatarFallback className="bg-[var(--color-wa-teal)] text-white text-lg font-bold">
               {participant.name.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{participant.name}</h3>
+            <h3 className="text-xl font-black text-zinc-900 tracking-tight">{participant.name}</h3>
             <div className="flex flex-wrap gap-1.5 mt-1">
-              {participant.badges.map((badge, idx) => (
+              <Badge className={`${verdictBg} ${verdictColor} border text-[10px] px-2.5 py-0.5 font-bold`}>
+                {verdictLabel}
+              </Badge>
+              {participant.badges.slice(0, 3).map((badge, idx) => (
                 <Badge
                   key={idx}
                   variant="secondary"
-                  className="bg-[#25D366]/10 text-[#075E54] border-none text-[10px] px-2 py-0.5 font-bold"
+                  className="bg-black/[0.03] text-zinc-600 border-none text-[10px] px-2 py-0.5 font-semibold"
                 >
                   {badge}
                 </Badge>
@@ -74,69 +103,43 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
         </div>
       </CardHeader>
 
-      <CardContent className="pt-6 space-y-6 relative">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-zinc-50/50 p-4 rounded-2xl border border-black/5">
-          <ScoreMetric
-            subLabel="Presence"
-            label="Self Focus"
-            Icon={Zap}
-            data={participant.self_focus}
-            color="bg-[#128C7E]"
-          />
-          <ScoreMetric
-            subLabel="Manipulation"
-            label="Manipulation Level"
-            Icon={Ghost}
-            data={participant.manipulation_level}
-            color="bg-purple-500"
-          />
-          <ScoreMetric
-            subLabel="Dryness"
-            label="Effort Level"
-            Icon={Droplets}
-            data={participant.effort_level}
-            color="bg-amber-500"
-          />
-          <ScoreMetric
-            subLabel="Hazard"
-            label="Red Flag Score"
-            Icon={Flag}
-            data={participant.red_flag_score}
-            color="bg-red-500"
-          />
+      <CardContent className="pt-5 space-y-5 relative">
+        {/* Core Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/50 p-4 rounded-xl border border-black/5">
+          <ScoreMetric subLabel="Presence" label="Self Focus" data={participant.self_focus} color="text-teal-600" />
+          <ScoreMetric subLabel="Manipulation" label="Manipulation Level" data={participant.manipulation_level} color="text-purple-600" />
+          <ScoreMetric subLabel="Dryness" label="Effort Level" data={participant.effort_level} color="text-amber-600" />
+          <ScoreMetric subLabel="Red Flag" label="Red Flag Score" data={participant.red_flag_score} color="text-red-600" />
         </div>
 
-        {/* Dynamic Group/Dyad Attributes */}
+        {/* Extended Attributes */}
         {(participant.yap_score || participant.simp_level) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-zinc-50/50 p-4 rounded-2xl border border-black/5 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/50 p-4 rounded-xl border border-black/5">
             {participant.yap_score && (
               <>
-                <ScoreMetric subLabel="Volume" label="Yap Score" Icon={MessageSquare} data={participant.yap_score} color="bg-blue-500" />
-                <ScoreMetric subLabel="Drama" label="Instigator Score" Icon={Zap} data={participant.instigator_score!} color="bg-red-400" />
-                <ScoreMetric subLabel="Harmony" label="Peacemaker Index" Icon={User} data={participant.peacemaker_index!} color="bg-green-400" />
-                <ScoreMetric subLabel="Presence" label="Ghost Level" Icon={Ghost} data={participant.ghost_level!} color="bg-zinc-400" />
+                <ScoreMetric subLabel="Volume" label="Yap Score" data={participant.yap_score} color="text-blue-600" />
+                <ScoreMetric subLabel="Drama" label="Instigator Score" data={participant.instigator_score!} color="text-red-500" />
+                <ScoreMetric subLabel="Harmony" label="Peacemaker Index" data={participant.peacemaker_index!} color="text-green-600" />
+                <ScoreMetric subLabel="Presence" label="Ghost Level" data={participant.ghost_level!} color="text-zinc-500" />
               </>
             )}
             {participant.simp_level && (
               <>
-                <ScoreMetric subLabel="Devotion" label="Simp Level" Icon={User} data={participant.simp_level} color="bg-pink-400" />
-                <ScoreMetric subLabel="Energy" label="Response Effort" Icon={MessageSquare} data={participant.response_effort!} color="bg-blue-400" />
+                <ScoreMetric subLabel="Devotion" label="Simp Level" data={participant.simp_level} color="text-pink-600" />
+                <ScoreMetric subLabel="Energy" label="Response Effort" data={participant.response_effort!} color="text-blue-500" />
               </>
             )}
           </div>
         )}
 
-        {/* The Receipts Section */}
-        <div className="mt-8 space-y-4">
-          <div className="flex items-center justify-between border-b border-black/5 pb-2">
-            <div className="flex items-center space-x-2">
-              <Quote className="w-4 h-4 text-[#128C7E]" />
-              <h4 className="text-sm font-black text-zinc-900 uppercase tracking-widest">The Receipts</h4>
-            </div>
+        {/* The Receipts */}
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center space-x-2 border-b border-black/5 pb-2">
+            <Quote className="w-4 h-4 text-[var(--color-wa-teal)]" />
+            <h4 className="text-xs font-black text-zinc-800 uppercase tracking-widest">The Receipts</h4>
           </div>
           
-          <div className="space-y-4 bg-[#efeae2] p-4 sm:p-5 rounded-2xl border border-black/5 relative overflow-hidden">
-             {/* Add very faint whatsapp background to the receipts area explicitly */}
+          <div className="space-y-3 bg-[var(--color-wa-bg)] p-4 rounded-xl border border-black/5 relative overflow-hidden">
              <div 
                 className="absolute inset-0 pointer-events-none opacity-[0.04] z-[0]" 
                 style={{ backgroundImage: 'url(/whatsapp_bg.png)', backgroundSize: '200px' }}
@@ -147,7 +150,6 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
                 <div key={idx} className="flex flex-col items-start w-full relative z-10">
                   <span className="text-[10px] font-bold text-zinc-500 mb-1 ml-1 uppercase tracking-wider">{quote.context}</span>
                   <div className="relative max-w-[95%] sm:max-w-[85%] bg-white px-4 py-2.5 rounded-2xl rounded-tl-sm shadow-sm border border-black/5">
-                    {/* Tail of the text bubble */}
                     <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -left-[7px] text-white">
                       <path opacity="0.1" d="M1.533,3.568L8,12.193V1H2.812 C1.042,1,0.474,2.156,1.533,3.568z"></path>
                       <path fill="currentColor" d="M1.533,2.568L8,11.193V0H2.812 C1.042,0,0.474,1.156,1.533,2.568z"></path>
@@ -158,13 +160,12 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
               ))
             ) : (
               <div className="flex flex-col items-center justify-center py-6 relative z-10">
-                <MessageSquare className="w-8 h-8 text-zinc-300 mb-2" />
-                <p className="text-sm text-zinc-500 font-medium">No notable quotes detected.</p>
+                <MessageSquare className="w-6 h-6 text-zinc-300 mb-2" />
+                <p className="text-xs text-zinc-400 font-medium">No notable quotes detected.</p>
               </div>
             )}
           </div>
         </div>
-
       </CardContent>
     </Card>
   );

@@ -62,7 +62,7 @@ class ScoringEngine:
         )
         
         # 4. Generate Timeline (Chart data)
-        timeline = self._generate_timeline(sentiment, toxicity, tonality, topics)
+        timeline = self._generate_timeline(sentiment, toxicity, tonality, topics, preprocessed, speakers)
         
         # 5. Generate Standout Cards
         standout_cards = self._generate_standout_cards(
@@ -333,7 +333,7 @@ class ScoringEngine:
             ))
         return results
 
-    def _generate_timeline(self, sentiment, toxicity, tonality, topics) -> List[Dict[str, Any]]:
+    def _generate_timeline(self, sentiment, toxicity, tonality, topics, preprocessed=None, speakers=None) -> List[Dict[str, Any]]:
         # Syncing sentiment timeline with toxicity peaks to compute true tension
         timeline = []
         num_bins = len(sentiment.timeline)
@@ -344,21 +344,37 @@ class ScoringEngine:
         tox_scores = [m.score for m in toxicity.messages]
         bin_size = len(tox_scores) / num_bins if len(tox_scores) > 0 else 1
         
+        # Calculate per-participant message counts per bin
+        participant_names = [p.name for p in speakers.participants] if speakers else []
+        all_messages = preprocessed.messages if preprocessed else []
+        total_msgs = len(all_messages)
+        msgs_per_bin = total_msgs / num_bins if num_bins > 0 else total_msgs
+        
         for i, point in enumerate(sentiment.timeline):
-            start_idx = int(i * bin_size)
-            end_idx = int((i + 1) * bin_size)
-            bin_tox = tox_scores[start_idx:end_idx]
+            # Toxicity binning
+            tox_start = int(i * bin_size)
+            tox_end = int((i + 1) * bin_size)
+            bin_tox = tox_scores[tox_start:tox_end]
             avg_bin_tox = sum(bin_tox) / len(bin_tox) if bin_tox else 0.0
             
             # Tension peaks when sentiment is highly negative OR toxicity is high
             sent_tension = max(0.0, -point.average_score) * 0.6
             tension_val = min(1.0, sent_tension + avg_bin_tox * 0.6)
             
+            # Per-participant message count in this bin
+            msg_start = int(i * msgs_per_bin)
+            msg_end = int((i + 1) * msgs_per_bin)
+            bin_messages = all_messages[msg_start:msg_end]
+            participant_volumes = {}
+            for name in participant_names:
+                participant_volumes[name] = sum(1 for m in bin_messages if m.raw.sender == name)
+            
             timeline.append({
                 "time": point.label,
                 "sentiment": point.average_score,
                 "volume": point.volume,
-                "tension": tension_val
+                "tension": tension_val,
+                "participant_volumes": participant_volumes
             })
         return timeline
 

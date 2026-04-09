@@ -2,7 +2,8 @@
 
 import React, { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
-import { Share2, Download, Check, Loader2 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import { Share2, Download, Check, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShareCard } from './ShareCard';
 import { ScoringResponse } from '@/types/analysis';
@@ -13,6 +14,7 @@ interface ShareActionProps {
 
 export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -21,17 +23,15 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
     
     setIsGenerating(true);
     try {
-      // Small delay to ensure any layout/rendering is complete
       await new Promise(r => setTimeout(r, 100));
       
       const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2, // Double quality for crisp images
+        pixelRatio: 2,
         backgroundColor: '#050510',
         width: 540,
         height: 675,
       });
 
-      // Simple browser download trigger
       const link = document.createElement('a');
       link.download = `moodra-vibe-${Date.now()}.png`;
       link.href = dataUrl;
@@ -46,25 +46,90 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
     }
   };
 
+  const handlePdfExport = async () => {
+    setIsPdfGenerating(true);
+    try {
+      // Find the results container (the parent motion.div with key="result")
+      const resultsContainer = document.querySelector('[data-results-container]') as HTMLElement;
+      if (!resultsContainer) {
+        console.error('Results container not found');
+        return;
+      }
+
+      // Small delay to ensure rendering is complete
+      await new Promise(r => setTimeout(r, 200));
+
+      // Capture the full results area as a PNG
+      const dataUrl = await toPng(resultsContainer, {
+        pixelRatio: 2,
+        backgroundColor: '#efeae2', // var(--color-wa-bg)
+        style: {
+          padding: '40px',
+        },
+      });
+
+      // Create an image to get dimensions
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+      });
+
+      // Create PDF with dimensions matching the captured content
+      // Use points (1 pt = 1/72 inch), scale image to reasonable width
+      const pdfWidth = 595; // ~A4 width in points, but height will be custom
+      const scale = pdfWidth / img.width;
+      const pdfHeight = img.height * scale;
+
+      const pdf = new jsPDF({
+        orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
+        unit: 'pt',
+        format: [pdfWidth, pdfHeight],
+      });
+
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`moodra-results-${Date.now()}.pdf`);
+
+      setIsFinished(true);
+      setTimeout(() => setIsFinished(false), 3000);
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
+
+  const isAnyLoading = isGenerating || isPdfGenerating;
+
   return (
     <>
-      <div className="flex items-center justify-end space-x-3 w-full sm:w-auto">
+      <div className="flex items-center justify-end space-x-2 w-full sm:w-auto">
         <Button 
           variant="outline"
-          onClick={() => window.print()}
-          className="border-zinc-300 text-zinc-700 bg-white hover:bg-zinc-50 shadow-sm font-bold"
+          disabled={isAnyLoading}
+          onClick={handlePdfExport}
+          className="border-black/10 text-zinc-700 bg-white hover:bg-zinc-50 shadow-sm font-semibold text-sm"
         >
-          <Download className="w-4 h-4 mr-2" />
-          Save PDF
+          {isPdfGenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <FileText className="w-4 h-4 mr-2" />
+              Save PDF
+            </>
+          )}
         </Button>
         <Button 
-          disabled={isGenerating}
+          disabled={isAnyLoading}
           onClick={handleExport}
           className={`${
             isFinished 
-            ? 'bg-[#25D366] hover:bg-[#128C7E]' 
+            ? 'bg-[var(--color-wa-green)] hover:bg-[var(--color-wa-teal)]' 
             : 'bg-zinc-800 hover:bg-zinc-700'
-          } text-white shadow-lg transition-all font-bold min-w-[140px]`}
+          } text-white shadow-sm transition-all font-semibold text-sm min-w-[130px]`}
         >
           {isGenerating ? (
             <>
@@ -79,13 +144,13 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
           ) : (
             <>
               <Share2 className="w-4 h-4 mr-2" />
-              Share Vibe
+              Share Card
             </>
           )}
         </Button>
       </div>
 
-      {/* Offscreen Rendering Container */}
+      {/* Offscreen Rendering Container for share card */}
       <div 
         aria-hidden="true"
         className="fixed top-[-9999px] left-[-9999px]"

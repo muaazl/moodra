@@ -45,6 +45,7 @@ export interface TimelinePoint {
   sentiment: number;
   volume: number;
   tension: number;
+  participant_volumes?: Record<string, number>;
 }
 
 export interface StandoutCard {
