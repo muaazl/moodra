@@ -4,7 +4,8 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface AnalysisProgressProps {
   isAnalyzing: boolean;
-  onComplete?: () => void; // Optional callback when all simulated phases finish
+  onComplete?: () => void;
+  estimatedDuration?: number; // Total estimated time in seconds
 }
 
 const PHASES = [
@@ -13,11 +14,13 @@ const PHASES = [
   { id: 3, label: "Scoring & aggregating results" },
 ];
 
-// Time to wait per phase (in milliseconds)
-const PHASE_DURATION_MS = 3000;
-
-export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ isAnalyzing, onComplete }) => {
+export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ 
+  isAnalyzing, 
+  onComplete,
+  estimatedDuration = 10 
+}) => {
   const [currentPhase, setCurrentPhase] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<number>(estimatedDuration);
 
   useEffect(() => {
     if (!isAnalyzing) {
@@ -25,24 +28,25 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ isAnalyzing,
       return;
     }
 
-    // Start at phase 1 when analyzing begins
     setCurrentPhase(1);
+    setTimeLeft(estimatedDuration);
 
-    // Simulate progress through phases
-    const timer1 = setTimeout(() => setCurrentPhase(2), PHASE_DURATION_MS);
-    const timer2 = setTimeout(() => setCurrentPhase(3), PHASE_DURATION_MS * 2);
-    const timer3 = setTimeout(() => {
-      // Stay on phase 3 until isAnalyzing becomes false (when API actually returns)
-      // but we could fire an optional callback here if needed.
-      if (onComplete) onComplete();
-    }, PHASE_DURATION_MS * 3);
+    const phaseDuration = (estimatedDuration * 1000) / 3;
+
+    const timer1 = setTimeout(() => setCurrentPhase(2), phaseDuration);
+    const timer2 = setTimeout(() => setCurrentPhase(3), phaseDuration * 2);
+    
+    // Countdown timer
+    const countdown = setInterval(() => {
+      setTimeLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
+      clearInterval(countdown);
     };
-  }, [isAnalyzing, onComplete]);
+  }, [isAnalyzing, estimatedDuration]);
 
   if (!isAnalyzing) return null;
 
@@ -50,7 +54,7 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ isAnalyzing,
     <div className="w-full max-w-md mx-auto mt-6 space-y-4">
       <div className="flex justify-between items-center mb-2">
         <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-          Processing
+          Processing {timeLeft > 0 && `(est. ${timeLeft}s)`}
         </span>
         <span className="text-xs font-mono text-zinc-500">
           {Math.min(currentPhase, 3)}/3

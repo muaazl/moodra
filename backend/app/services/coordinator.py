@@ -53,6 +53,9 @@ class AnalysisCoordinator:
         self._executor = ThreadPoolExecutor(max_workers=_THREAD_WORKERS)
 
         # --- Shared embedding model (loaded once, used by two analyzers) ---
+        # Note: SentenceTransformer(settings.TOPIC_MODEL) is NOT lazy, it loads immediately.
+        # But Sentiment and Toxicity ARE lazy.
+        print(f"Initializing Moodra Analyzers (Model: {settings.TOPIC_MODEL})...")
         shared_embedder = SentenceTransformer(settings.TOPIC_MODEL)
 
         self.parser = WhatsAppParser()
@@ -63,6 +66,19 @@ class AnalysisCoordinator:
         self.tonality = TonalityAnalyzer()  # model-free: no embedder needed
         self.topics = TopicAnalyzer(embedder=shared_embedder)
         self.scoring = ScoringEngine()
+
+    def warm_up(self):
+        """Explicitly load all lazy ML models to avoid cold-start lag."""
+        import time
+        start = time.time()
+        print("Warming up ML models (Sentiment, Toxicity)...")
+        _ = self.sentiment.pipeline
+        _ = self.toxicity.pipeline
+        # Topics is already partially ready due to shared_embedder in init, 
+        # but let's touch it to be sure.
+        _ = self.topics.model
+        duration = round(time.time() - start, 2)
+        print(f"Warm-up complete in {duration}s. All systems ready.")
 
     # ------------------------------------------------------------------
     # Helpers

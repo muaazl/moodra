@@ -14,9 +14,10 @@ import { AnalysisProgress } from './AnalysisProgress';
 interface ChatInputFormProps {
   onAnalyze: (text: string | null, file: File | null, anonymize: boolean) => void;
   isLoading: boolean;
+  estimatedDuration: number;
 }
 
-export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoading }) => {
+export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoading, estimatedDuration }) => {
   const [pastedText, setPastedText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [anonymize, setAnonymize] = useState(false);
@@ -59,52 +60,49 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
             </TabsTrigger>
           </TabsList>
 
-          <AnimatePresence mode="wait">
-            <TabsContent key="paste" value="paste">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Textarea
-                  placeholder="Paste your exported WhatsApp chat history here..."
-                  className="h-[220px] bg-black/40 border-zinc-500/10 focus-visible:ring-zinc-500/30 text-zinc-50 resize-none overflow-y-auto"
-                  value={pastedText}
-                  onChange={handlePasteChange}
-                />
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent key="upload" value="upload">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="flex flex-col items-center justify-center min-h-[220px] border-2 border-dashed border-zinc-500/20 rounded-lg bg-black/40 hover:bg-zinc-500/5 transition-colors cursor-pointer relative"
-              >
-                <input
-                  type="file"
-                  accept=".txt"
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  onChange={handleFileChange}
-                />
-                <div className="text-center space-y-4">
-                  <div className="p-4 rounded-full bg-zinc-500/10 mx-auto w-fit">
-                    <Upload className="w-8 h-8 text-zinc-400" />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {mode === 'paste' ? (
+                <TabsContent value="paste">
+                  <Textarea
+                    placeholder="Paste your exported WhatsApp chat history here..."
+                    className="h-[220px] bg-black/40 border-zinc-500/10 focus-visible:ring-zinc-500/30 text-zinc-50 resize-none overflow-y-auto"
+                    value={pastedText}
+                    onChange={handlePasteChange}
+                  />
+                </TabsContent>
+              ) : (
+                <TabsContent value="upload">
+                  <div className="flex flex-col items-center justify-center min-h-[220px] border-2 border-dashed border-zinc-500/20 rounded-lg bg-black/40 hover:bg-zinc-500/5 transition-colors cursor-pointer relative">
+                    <input
+                      type="file"
+                      accept=".txt"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={handleFileChange}
+                    />
+                    <div className="text-center space-y-4">
+                      <div className="p-4 rounded-full bg-zinc-500/10 mx-auto w-fit">
+                        <Upload className="w-8 h-8 text-zinc-400" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-zinc-200">
+                          {file ? file.name : "Drag and drop your WhatsApp .txt export"}
+                        </p>
+                        <p className="text-xs text-zinc-400/60 font-mono">
+                          (WhatsApp &gt; More &gt; Export Chat &gt; Without Media)
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-zinc-200">
-                      {file ? file.name : "Drag and drop your WhatsApp .txt export"}
-                    </p>
-                    <p className="text-xs text-zinc-400/60 font-mono">
-                      (WhatsApp &gt; More &gt; Export Chat &gt; Without Media)
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            </TabsContent>
+                </TabsContent>
+              )}
+            </motion.div>
           </AnimatePresence>
         </Tabs>
 
@@ -154,7 +152,7 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
             )}
           </Button>
 
-          <AnalysisProgress isAnalyzing={isLoading} />
+          <AnalysisProgress isAnalyzing={isLoading} estimatedDuration={estimatedDuration} />
 
           {!isLoading && (
             <p className="text-center text-[10px] text-zinc-300/40 uppercase tracking-widest font-mono pt-4">

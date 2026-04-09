@@ -18,12 +18,35 @@ export default function Home() {
   const [result, setResult] = useState<ScoringResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [estimatedDuration, setEstimatedDuration] = useState(10);
 
-
+  const playCompletionSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5); 
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.8);
+    } catch (e) { console.error(e); }
+  };
 
   const handleAnalysis = async (text: string | null, file: File | null, anonymize: boolean) => {
     setIsLoading(true);
     setError(null);
+
+    let est = 5;
+    if (text) est = Math.max(5, Math.ceil(text.length / 5000) + 3);
+    if (file) est = Math.max(8, Math.ceil(file.size / 50000) + 5);
+    setEstimatedDuration(est);
+
     try {
       let response;
       if (text) {
@@ -33,6 +56,7 @@ export default function Home() {
       }
       if (response && response.data) {
         setResult(response.data);
+        playCompletionSound();
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong during analysis');
@@ -102,6 +126,7 @@ export default function Home() {
               <ChatInputForm
                 isLoading={isLoading}
                 onAnalyze={handleAnalysis}
+                estimatedDuration={estimatedDuration}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">

@@ -19,6 +19,12 @@ interface TimelineChartProps {
 }
 
 export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   return (
     <Card className="w-full bg-black/40 backdrop-blur-xl border-zinc-500/10 mb-8 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-6">
@@ -32,60 +38,66 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
       </CardHeader>
       <CardContent className="p-0 sm:p-6">
         <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="colorTension" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
-              <XAxis
-                dataKey="time"
-                stroke="#6366f140"
-                fontSize={12}
-                tickFormatter={(val) => new Date(val).toLocaleDateString()}
-              />
-              <YAxis stroke="#6366f140" fontSize={12} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#0a0a0a',
-                  borderColor: '#6366f120',
-                  borderRadius: '12px',
-                  color: '#e0e7ff',
-                }}
-                itemStyle={{ fontSize: '12px' }}
-                cursor={{ stroke: '#6366f140', strokeWidth: 2 }}
-              />
-              <Legend verticalAlign="top" height={36} iconType="circle" />
-              <Area
-                type="monotone"
-                dataKey="sentiment"
-                name="Sentiment"
-                stroke="#6366f1"
-                fillOpacity={1}
-                fill="url(#colorSentiment)"
-                strokeWidth={3}
-              />
-              <Area
-                type="monotone"
-                dataKey="tension"
-                name="Tension"
-                stroke="#f43f5e"
-                fillOpacity={1}
-                fill="url(#colorTension)"
-                strokeWidth={3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {isMounted ? (
+            <ResponsiveContainer width="100%" height="100%" minHeight={0}>
+              <AreaChart
+                data={data}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorTension" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
+                <XAxis
+                  dataKey="time"
+                  stroke="#6366f140"
+                  fontSize={12}
+                  tickFormatter={(val) => new Date(val).toLocaleDateString()}
+                />
+                <YAxis stroke="#6366f140" fontSize={12} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0a0a0a',
+                    borderColor: '#6366f120',
+                    borderRadius: '12px',
+                    color: '#e0e7ff',
+                  }}
+                  itemStyle={{ fontSize: '12px' }}
+                  cursor={{ stroke: '#6366f140', strokeWidth: 2 }}
+                />
+                <Legend verticalAlign="top" height={36} iconType="circle" />
+                <Area
+                  type="monotone"
+                  dataKey="sentiment"
+                  name="Sentiment"
+                  stroke="#6366f1"
+                  fillOpacity={1}
+                  fill="url(#colorSentiment)"
+                  strokeWidth={3}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="tension"
+                  name="Tension"
+                  stroke="#f43f5e"
+                  fillOpacity={1}
+                  fill="url(#colorTension)"
+                  strokeWidth={3}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+               <div className="w-8 h-8 border-2 border-[var(--color-wa-green)] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
