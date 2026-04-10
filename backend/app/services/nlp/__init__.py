@@ -22,7 +22,6 @@ from .sentiment_analyzer import SentimentAnalyzer
 from .toxicity_analyzer import ToxicityAnalyzer
 from .tonality_analyzer import TonalityAnalyzer
 from .topic_analyzer import TopicAnalyzer
-
 __all__ = [
     "EntityMatch",
     "ParticipantProfile",

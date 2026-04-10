@@ -1,5 +1,4 @@
 'use client';
-
 import React from 'react';
 import { ParticipantScoring, ScoreMetadata } from '@/types/analysis';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -7,11 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, MessageSquare, Quote } from 'lucide-react';
-
 interface ParticipantCardProps {
   participant: ParticipantScoring;
 }
-
 const ScoreMetric: React.FC<{
   label: string;
   subLabel: string;
@@ -19,7 +16,6 @@ const ScoreMetric: React.FC<{
   color: string;
 }> = ({ label, subLabel, data, color }) => {
   const percentage = Math.round(data.value * 100);
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -52,11 +48,8 @@ const ScoreMetric: React.FC<{
     </div>
   );
 };
-
 export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant }) => {
   const rfScore = Math.round(participant.red_flag_score.value * 100);
-
-  // Overall verdict
   let verdictLabel = 'Green Flag';
   let verdictColor = 'text-[var(--color-wa-green)]';
   let verdictBg = 'bg-[var(--color-wa-green)]/5 border-[var(--color-wa-green)]/15';
@@ -69,13 +62,11 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
     verdictColor = 'text-amber-600';
     verdictBg = 'bg-amber-50 border-amber-200';
   }
-
   return (
     <Card className="bg-white/80 backdrop-blur-sm border-black/5 overflow-hidden relative group hover:border-black/10 transition-all duration-300 shadow-sm">
       <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-5 transition-opacity pointer-events-none">
         <User size={120} strokeWidth={1} />
       </div>
-
       <CardHeader className="relative pb-0 pt-6">
         <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <Avatar className="h-14 w-14 border-2 border-white shadow-sm ring-4 ring-[var(--color-wa-green)]/10">
@@ -117,17 +108,15 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
           </div>
         </div>
       </CardHeader>
-
       <CardContent className="pt-5 space-y-5 relative">
-        {/* Core Metrics */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/50 p-4 rounded-xl border border-black/5">
           <ScoreMetric subLabel="Presence" label="Self Focus" data={participant.self_focus} color="text-teal-600" />
           <ScoreMetric subLabel="Manipulation" label="Manipulation Level" data={participant.manipulation_level} color="text-purple-600" />
           <ScoreMetric subLabel="Dryness" label="Effort Level" data={participant.effort_level} color="text-amber-600" />
           <ScoreMetric subLabel="Red Flag" label="Red Flag Score" data={participant.red_flag_score} color="text-red-600" />
         </div>
-
-        {/* Extended Attributes */}
+        {}
         {(participant.yap_score || participant.simp_level) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50/50 p-4 rounded-xl border border-black/5">
             {participant.yap_score && (
@@ -146,8 +135,7 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
             )}
           </div>
         )}
-
-        {/* Fun Stats */}
+        {}
         {(participant.response_time || participant.conversation_starter || participant.late_night_ratio || participant.question_ratio) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[var(--color-wa-bg)]/30 p-4 rounded-xl border border-black/5">
             {participant.response_time && <ScoreMetric subLabel="Speed" label="Leaves on Read" data={participant.response_time} color="text-amber-500" />}
@@ -156,20 +144,17 @@ export const ParticipantCard: React.FC<ParticipantCardProps> = ({ participant })
             {participant.question_ratio && <ScoreMetric subLabel="Inquisitive" label="Asks Lots of Questions" data={participant.question_ratio} color="text-purple-500" />}
           </div>
         )}
-
-        {/* The Receipts */}
+        {}
         <div className="mt-4 space-y-3">
           <div className="flex items-center space-x-2 border-b border-black/5 pb-2">
             <Quote className="w-4 h-4 text-[var(--color-wa-teal)]" />
             <h4 className="text-xs font-black text-zinc-800 uppercase tracking-widest">The Receipts</h4>
           </div>
-          
           <div className="space-y-3 bg-[var(--color-wa-bg)] p-4 rounded-xl border border-black/5 relative overflow-hidden">
              <div 
                 className="absolute inset-0 pointer-events-none opacity-[0.04] z-[0]" 
                 style={{ backgroundImage: 'url(/whatsapp_bg.png)', backgroundSize: '200px' }}
              />
-             
             {participant.notable_quotes && participant.notable_quotes.length > 0 ? (
               <div className="space-y-4 relative z-10 max-h-[400px] overflow-y-auto hide-scrollbar pb-2 pt-1">
                 {Object.entries(

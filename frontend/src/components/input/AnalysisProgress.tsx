@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Loader2 } from 'lucide-react';
-
 interface AnalysisProgressProps {
   isAnalyzing: boolean;
   onComplete?: () => void;
   estimatedDuration?: number;
 }
-
 const PHASES = [
   { id: 1, label: "Analyzing sentiment and toxicity" },
   { id: 2, label: "Detecting tonality and topics" },
   { id: 3, label: "Scoring and aggregating results" },
 ];
-
 export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({ 
   isAnalyzing, 
   onComplete,
@@ -21,34 +18,26 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
 }) => {
   const [currentPhase, setCurrentPhase] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(estimatedDuration);
-
   useEffect(() => {
     if (!isAnalyzing) {
       setCurrentPhase(0);
       return;
     }
-
     setCurrentPhase(1);
     setTimeLeft(estimatedDuration);
-
     const phaseDuration = (estimatedDuration * 1000) / 3;
-
     const timer1 = setTimeout(() => setCurrentPhase(2), phaseDuration);
     const timer2 = setTimeout(() => setCurrentPhase(3), phaseDuration * 2);
-    
     const countdown = setInterval(() => {
       setTimeLeft((prev) => Math.max(0, prev - 1));
     }, 1000);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearInterval(countdown);
     };
   }, [isAnalyzing, estimatedDuration]);
-
   if (!isAnalyzing) return null;
-
   return (
     <div className="w-full max-w-md mx-auto mt-4 space-y-3">
       <div className="flex justify-between items-center">
@@ -59,12 +48,10 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
           {timeLeft > 0 ? `~${timeLeft}s remaining` : 'Finishing up...'}
         </span>
       </div>
-
       <div className="space-y-2">
         {PHASES.map((phase) => {
           const isActive = currentPhase === phase.id;
           const isPast = currentPhase > phase.id;
-
           return (
             <motion.div
               key={phase.id}
@@ -94,7 +81,6 @@ export const AnalysisProgress: React.FC<AnalysisProgressProps> = ({
           );
         })}
       </div>
-
       <div className="h-1 w-full bg-black/5 rounded-full overflow-hidden mt-3">
         <motion.div
           className="h-full bg-[var(--color-wa-green)] rounded-full"

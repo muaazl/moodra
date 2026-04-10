@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, MessageSquare, Shield, Zap, RefreshCcw, AlertTriangle, Flame } from 'lucide-react';
@@ -11,13 +10,13 @@ import { analyzeText, analyzeFile } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
+import { useToast } from '@/components/ui/toast';
 export default function Home() {
+  const { toast } = useToast();
   const [result, setResult] = useState<ScoringResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [estimatedDuration, setEstimatedDuration] = useState(10);
-
   const playCompletionSound = () => {
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -33,18 +32,15 @@ export default function Home() {
       gainNode.connect(audioCtx.destination);
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + 0.8);
-    } catch (e) { console.error(e); }
+    } catch (e) {  }
   };
-
   const handleAnalysis = async (text: string | null, file: File | null, anonymize: boolean) => {
     setIsLoading(true);
     setError(null);
-
     let est = 5;
     if (text) est = Math.max(5, Math.ceil(text.length / 5000) + 3);
     if (file) est = Math.max(8, Math.ceil(file.size / 50000) + 5);
     setEstimatedDuration(est);
-
     try {
       let response;
       if (text) {
@@ -57,34 +53,32 @@ export default function Home() {
         playCompletionSound();
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong during analysis');
+      const msg = err.message || 'Something went wrong during analysis';
+      setError(msg);
+      toast(msg, 'error');
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleReset = () => {
     setResult(null);
     setError(null);
   };
-
   return (
     <main className="min-h-screen bg-[var(--color-wa-bg)] text-zinc-900 selection:bg-[var(--color-wa-green)]/30 relative">
-      {/* WhatsApp Doodle Background */}
+      {}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.03] z-[0]" 
         style={{ backgroundImage: 'url(/whatsapp_bg.png)', backgroundSize: '400px' }}
       />
-
       <div className="relative z-10 container mx-auto px-4 py-12">
-        {/* Header */}
+        {}
         <header className="flex items-center justify-between mb-16">
           <div className="flex items-center space-x-2">
             <img src="/favicon.svg" alt="Moodra" className="w-8 h-8 drop-shadow-sm" />
             <span className="text-xl font-black tracking-tighter text-zinc-800">Moodra</span>
           </div>
         </header>
-
         <AnimatePresence mode="wait">
           {!result ? (
             <motion.div
@@ -106,7 +100,6 @@ export default function Home() {
                   Drop your WhatsApp chat and find out who&apos;s the dry texter, who&apos;s the drama starter, and who&apos;s lowkey manipulative. 👀
                 </p>
               </div>
-
               {error && (
                 <Card className="border-red-200 bg-red-50/80 mb-8">
                   <CardContent className="flex items-center space-x-3 p-4">
@@ -115,13 +108,11 @@ export default function Home() {
                   </CardContent>
                 </Card>
               )}
-
               <ChatInputForm
                 isLoading={isLoading}
                 onAnalyze={handleAnalysis}
                 estimatedDuration={estimatedDuration}
               />
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
                 {[
                   { title: "Participant Stats", desc: "Who carries the conversation and who ghosts.", icon: Zap },
@@ -145,7 +136,7 @@ export default function Home() {
               data-results-container
               className="space-y-8"
             >
-              {/* Result Header */}
+              {}
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-8 border-b border-black/5">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
@@ -153,7 +144,6 @@ export default function Home() {
                     <Badge className="bg-[var(--color-wa-teal)] text-white hover:bg-[var(--color-wa-dark)] border-none font-bold">{result.overall_mood}</Badge>
                   </div>
                   <p className="text-zinc-600 max-w-2xl font-medium text-lg leading-relaxed">{result.overall_summary}</p>
-                  
                   {result.roast_summary && (
                     <div className="p-4 bg-red-50 rounded-xl max-w-2xl relative overflow-hidden border border-red-200">
                        <div className="absolute top-0 right-0 p-2 opacity-10">
@@ -171,8 +161,7 @@ export default function Home() {
                   </Button>
                 </div>
               </div>
-
-              {/* Global Metrics */}
+              {}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-6 rounded-2xl bg-white border border-black/5 shadow-sm text-center md:text-left">
                   <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Health</p>
@@ -183,11 +172,9 @@ export default function Home() {
                   <p className="text-3xl font-black text-[var(--color-wa-teal)]">{result.global_metrics.total_messages}</p>
                 </div>
               </div>
-
-              {/* Timeline */}
+              {}
               <TimelineChart data={result.timeline} />
-
-              {/* Participants - Two Column */}
+              {}
               <div className="flex overflow-x-auto pb-6 -mx-4 px-4 snap-x snap-mandatory scroll-smooth lg:grid lg:grid-cols-2 lg:gap-8 lg:overflow-visible lg:pb-0 lg:mx-0 lg:px-0 hide-scrollbar">
                 {result.participants.map((p, i) => (
                   <div key={i} className="w-[85vw] sm:w-[60vw] lg:w-auto snap-center shrink-0 mr-4 lg:mr-0 last:mr-0">
@@ -195,8 +182,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-
-              {/* Standout Cards */}
+              {}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {result.standout_cards.map((card, i) => (
                   <Card key={i} className="bg-white/80 border-black/5 shadow-sm relative overflow-hidden">
@@ -222,7 +208,6 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
-
         <footer className="mt-24 pt-8 border-t border-zinc-500/5 text-center">
           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">
             Moodra &middot; {new Date().getFullYear()} &middot; Privacy First

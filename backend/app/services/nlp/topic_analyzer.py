@@ -6,7 +6,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
-
 from app.services.preprocessing.schemas import PreprocessedMessage
 from app.services.nlp.schemas import (
     TopicSegment,
@@ -14,74 +13,53 @@ from app.services.nlp.schemas import (
     TopicAnalysisResponse,
 )
 from app.core.config import settings
-
 _EMBED_BATCH_SIZE = 64
-
-
 class TopicAnalyzer:
     """
     Analyzes chat messages to detect topic shifts and group related segments.
     Uses local embeddings and statistical methods — no external API calls.
-
     Optimization vs. original:
     - Accepts an optional shared SentenceTransformer to avoid loading a
       second copy of MiniLM when both TopicAnalyzer and TonalityAnalyzer
       are in use (the coordinator injects one shared instance).
     """
-
     def __init__(
         self,
         model_name: str = settings.TOPIC_MODEL,
         embedder: Optional[SentenceTransformer] = None,
     ):
-        # Use the shared embedder if provided, otherwise create lazily
         self._embedder = embedder
         self._model_name = model_name
         self.window_size = 5
         self.similarity_threshold = 0.50
-
     @property
     def model(self) -> SentenceTransformer:
         if self._embedder is None:
             self._embedder = SentenceTransformer(self._model_name)
         return self._embedder
-
-    # ------------------------------------------------------------------
-    # Main entry point
-    # ------------------------------------------------------------------
-
     def analyze(self, messages: List[PreprocessedMessage]) -> TopicAnalysisResponse:
         if not messages:
             return TopicAnalysisResponse(segments=[], clusters=[], shifts=[])
-
         filtered_texts = [
             m.base_clean if m.base_clean.strip() else " " for m in messages
         ]
         embeddings = self._get_embeddings(filtered_texts)
-
         n = len(messages)
         W = self.window_size
         if n < W * 4:
             W = max(2, n // 6)
-
         shift_indices = self._detect_topic_shifts(embeddings, W)
         segments = self._create_segments(messages, embeddings, shift_indices)
         clusters = self._cluster_segments(segments, embeddings)
         summary_metrics = self._calculate_summary_metrics(
             segments, clusters, len(messages)
         )
-
         return TopicAnalysisResponse(
             segments=segments,
             clusters=clusters,
             shifts=[messages[idx].message_id for idx in shift_indices],
             summary_metrics=summary_metrics,
         )
-
-    # ------------------------------------------------------------------
-    # Embedding
-    # ------------------------------------------------------------------
-
     def _get_embeddings(self, texts: List[str]) -> np.ndarray:
         return self.model.encode(
             texts,
@@ -89,11 +67,6 @@ class TopicAnalyzer:
             convert_to_numpy=True,
             show_progress_bar=False,
         )
-
-    # ------------------------------------------------------------------
-    # Topic shift detection (unchanged logic)
-    # ------------------------------------------------------------------
-
     def _detect_topic_shifts(
         self, embeddings: np.ndarray, W: int
     ) -> List[int]:
@@ -101,18 +74,15 @@ class TopicAnalyzer:
         n = len(embeddings)
         if n < W * 2:
             return shifts
-
         similarities = []
         for i in range(W, n - W):
             prev_emb = np.mean(embeddings[i - W : i], axis=0).reshape(1, -1)
             next_emb = np.mean(embeddings[i : i + W], axis=0).reshape(1, -1)
             sim = cosine_similarity(prev_emb, next_emb)[0][0]
             similarities.append((i, sim))
-
         for i, sim in similarities:
             if sim < self.similarity_threshold:
                 shifts.append(i)
-
         refined_shifts = []
         if shifts:
             shifts.sort()
@@ -120,13 +90,7 @@ class TopicAnalyzer:
             for s in shifts[1:]:
                 if s - refined_shifts[-1] >= W:
                     refined_shifts.append(s)
-
         return refined_shifts
-
-    # ------------------------------------------------------------------
-    # Segmentation + clustering (unchanged logic)
-    # ------------------------------------------------------------------
-
     def _create_segments(
         self,
         messages: List[PreprocessedMessage],
@@ -135,23 +99,19 @@ class TopicAnalyzer:
     ) -> List[TopicSegment]:
         segments = []
         boundaries = [0] + shift_indices + [len(messages)]
-
         for i in range(len(boundaries) - 1):
             start_idx = boundaries[i]
             end_idx = boundaries[i + 1]
             segment_msgs = messages[start_idx:end_idx]
             if not segment_msgs:
                 continue
-
             segment_text = " ".join(
                 [m.base_clean for m in segment_msgs if m.base_clean.strip()]
             )
             keywords = self._extract_keywords(segment_text)
             label = keywords[0].title() if keywords else "General Chat"
-
             start_time = getattr(segment_msgs[0].raw, "timestamp", None)
             end_time = getattr(segment_msgs[-1].raw, "timestamp", None)
-
             segments.append(
                 TopicSegment(
                     id=i,
@@ -166,7 +126,6 @@ class TopicAnalyzer:
                 )
             )
         return segments
-
     def _cluster_segments(
         self,
         segments: List[TopicSegment],
@@ -174,7 +133,6 @@ class TopicAnalyzer:
     ) -> List[TopicCluster]:
         if not segments:
             return []
-
         segment_embeddings = []
         current_idx = 0
         for seg in segments:
@@ -182,7 +140,6 @@ class TopicAnalyzer:
             seg_emb = np.mean(embeddings[current_idx : current_idx + count], axis=0)
             segment_embeddings.append(seg_emb)
             current_idx += count
-
         if len(segments) < 2:
             return [
                 TopicCluster(
@@ -194,7 +151,6 @@ class TopicAnalyzer:
                     total_messages=segments[0].message_count,
                 )
             ]
-
         clustering = AgglomerativeClustering(
             n_clusters=None,
             distance_threshold=0.5,
@@ -205,11 +161,9 @@ class TopicAnalyzer:
             cluster_labels = clustering.fit_predict(segment_embeddings)
         except Exception:
             cluster_labels = [0] * len(segments)
-
         clusters_map = collections.defaultdict(list)
         for idx, label in enumerate(cluster_labels):
             clusters_map[label].append(segments[idx])
-
         topic_clusters = []
         for cluster_id, segs in clusters_map.items():
             all_keywords: List[str] = []
@@ -230,11 +184,6 @@ class TopicAnalyzer:
                 )
             )
         return topic_clusters
-
-    # ------------------------------------------------------------------
-    # Keyword extraction + summary (unchanged)
-    # ------------------------------------------------------------------
-
     def _extract_keywords(self, text: str, max_keywords: int = 5) -> List[str]:
         if not text.strip():
             return []
@@ -251,7 +200,6 @@ class TopicAnalyzer:
                 k
                 for k, _ in collections.Counter(tokens).most_common(max_keywords)
             ]
-
     def _calculate_summary_metrics(
         self, segments, clusters, total_msgs
     ) -> Dict[str, Any]:

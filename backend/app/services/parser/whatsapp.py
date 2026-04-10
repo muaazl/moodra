@@ -2,7 +2,6 @@ import re
 import logging
 from datetime import datetime
 from typing import List, Optional, Tuple
-
 from .schemas import RawMessage, ParseResult, ParseWarning
 from .regex_config import (
     ANDROID_PATTERN,
@@ -12,12 +11,9 @@ from .regex_config import (
     TIMESTAMP_START,
     MEDIA_PLACEHOLDERS
 )
-
 logger = logging.getLogger(__name__)
-
 class WhatsAppParser:
     """Orchestrates the conversion of raw WhatsApp text into structured data."""
-
     def __init__(self):
         self.date_formats = [
             "%d/%m/%Y, %H:%M",
@@ -31,11 +27,9 @@ class WhatsAppParser:
             "%Y-%m-%d, %H:%M:%S",
             "%Y-%m-%d, %H:%M",
         ]
-
     def _clean_text(self, text: str) -> str:
         """Removes invisible control characters (LRM, RLM, BOM, etc.)."""
         return text.translate(str.maketrans('', '', '\u200c\u200d\u200e\u200f\ufeff'))
-
     def _parse_timestamp(self, ts_str: str) -> Optional[datetime]:
         """Try several common WhatsApp timestamp formats after cleaning."""
         ts_str = self._clean_text(ts_str).strip("[] ")
@@ -45,15 +39,13 @@ class WhatsAppParser:
             except ValueError:
                 continue
         return None
-
     def _is_media(self, content: str) -> bool:
         """Check if message is a media placeholder."""
         return any(placeholder.lower() in content.lower() for placeholder in MEDIA_PLACEHOLDERS)
-        
     def _is_valid_participant(self, sender: str) -> bool:
         """Filter out system messages that got parsed as senders."""
         if not sender: return False
-        if len(sender) > 40: return False  # Typical names shouldn't be this long
+        if len(sender) > 40: return False
         invalid_phrases = [
             " added ", " removed ", " changed the subject", 
             " left", " joined ", " created group", " messages to this group",
@@ -63,7 +55,6 @@ class WhatsAppParser:
         if any(p in lower_s for p in invalid_phrases): 
             return False
         return True
-    
     def _is_actually_system_content(self, content: str) -> bool:
         """Checks if content looks like a system notification (e.g. 'User joined')."""
         system_verbs = [
@@ -72,37 +63,27 @@ class WhatsAppParser:
             " pinned a message", " deleted a message"
         ]
         lower_c = content.lower()
-        # System messages are usually short and contain these verbs
         if len(content) < 100 and any(v in lower_c for v in system_verbs):
             return True
         return False
-
     def parse_text(self, text: str) -> ParseResult:
         """Main entry point to parse a block of text."""
         lines = text.splitlines()
         messages: List[RawMessage] = []
         warnings: List[ParseWarning] = []
-        
         current_msg_data: Optional[dict] = None
         participants = set()
-
         for i, line in enumerate(lines, 1):
             line = self._clean_text(line).strip()
             if not line:
                 continue
-
-            # Check if this line is a new message (starts with a timestamp)
             if TIMESTAMP_START.match(line):
-                # Flush the previous message if it exists
                 if current_msg_data:
                     messages.append(self._to_raw_message(current_msg_data))
-
-                # Try to match patterns
                 extracted = self._extract_message_parts(line)
                 if extracted:
                     ts_str, sender, content, is_system = extracted
                     dt = self._parse_timestamp(ts_str)
-                    
                     if dt:
                         is_actually_system = is_system or not self._is_valid_participant(sender) or self._is_actually_system_content(content)
                         current_msg_data = {
@@ -118,17 +99,12 @@ class WhatsAppParser:
                 else:
                     warnings.append(ParseWarning(line_number=i, content=line, reason="Unrecognizable message structure"))
             else:
-                # Continuation of the previous message
                 if current_msg_data:
                     current_msg_data["content"] += "\n" + line
                 else:
                     warnings.append(ParseWarning(line_number=i, content=line, reason="Line orphaned (no parent message)"))
-
-        # Final flush
         if current_msg_data:
             messages.append(self._to_raw_message(current_msg_data))
-
-        # Metadata
         metadata = {
             "participants": list(participants),
             "message_count": len(messages),
@@ -137,33 +113,22 @@ class WhatsAppParser:
                 "end": messages[-1].timestamp if messages else None
             }
         }
-
         return ParseResult(messages=messages, warnings=warnings, metadata=metadata)
-
     def _extract_message_parts(self, line: str) -> Optional[Tuple[str, Optional[str], str, bool]]:
         """Identify which regex matches the line and return (timestamp, sender, content, is_system)."""
-        # Try Android User
         match = ANDROID_PATTERN.match(line)
         if match:
             return match.group(1), match.group(2), match.group(3), False
-            
-        # Try iOS User
         match = IOS_PATTERN.match(line)
         if match:
             return match.group(1), match.group(2), match.group(3), False
-
-        # Try Android System
         match = ANDROID_SYSTEM_PATTERN.match(line)
         if match:
             return match.group(1), None, match.group(2), True
-
-        # Try iOS System
         match = IOS_SYSTEM_PATTERN.match(line)
         if match:
             return match.group(1), None, match.group(2), True
-
         return None
-
     def _to_raw_message(self, data: dict) -> RawMessage:
         """Convert dict buffer to a RawMessage object."""
         return RawMessage(

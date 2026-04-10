@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useRef, useState } from 'react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -7,98 +6,80 @@ import { Share2, Download, Check, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ShareCard } from './ShareCard';
 import { ScoringResponse } from '@/types/analysis';
-
+import { useToast } from '@/components/ui/toast';
 interface ShareActionProps {
   result: ScoringResponse;
 }
-
 export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
+  const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-
   const handleExport = async () => {
     if (!cardRef.current) return;
-    
     setIsGenerating(true);
     try {
       await new Promise(r => setTimeout(r, 100));
-      
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
         backgroundColor: '#050510',
         width: 540,
         height: 675,
       });
-
       const link = document.createElement('a');
       link.download = `moodra-vibe-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
-      
       setIsFinished(true);
+      toast('Share card exported!', 'success');
       setTimeout(() => setIsFinished(false), 3000);
     } catch (err) {
-      console.error('Failed to export card image:', err);
+      toast('Failed to export card image', 'error');
     } finally {
       setIsGenerating(false);
     }
   };
-
   const handlePdfExport = async () => {
     setIsPdfGenerating(true);
     try {
-      // Find the results container (the parent motion.div with key="result")
       const resultsContainer = document.querySelector('[data-results-container]') as HTMLElement;
       if (!resultsContainer) {
-        console.error('Results container not found');
+        toast('Results container not found', 'error');
         return;
       }
-
-      // Small delay to ensure rendering is complete
       await new Promise(r => setTimeout(r, 200));
-
-      // Capture the full results area as a PNG
       const dataUrl = await toPng(resultsContainer, {
         pixelRatio: 2,
-        backgroundColor: '#efeae2', // var(--color-wa-bg)
+        backgroundColor: '#efeae2',
         style: {
           padding: '40px',
         },
       });
-
-      // Create an image to get dimensions
       const img = new Image();
       img.src = dataUrl;
       await new Promise<void>((resolve) => {
         img.onload = () => resolve();
       });
-
-      // Create PDF with dimensions matching the captured content
       const pdfWidth = img.width;
       const pdfHeight = img.height;
-
       const pdf = new jsPDF({
         orientation: pdfWidth > pdfHeight ? 'landscape' : 'portrait',
         unit: 'pt',
         format: [pdfWidth, pdfHeight],
       });
-
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`moodra-results-${Date.now()}.pdf`);
-
       setIsFinished(true);
+      toast('PDF generated successfully!', 'success');
       setTimeout(() => setIsFinished(false), 3000);
     } catch (err) {
-      console.error('Failed to generate PDF:', err);
+      toast('Failed to generate PDF', 'error');
     } finally {
       setIsPdfGenerating(false);
     }
   };
-
   const isAnyLoading = isGenerating || isPdfGenerating;
-
   return (
     <>
       <div className="flex items-center justify-end space-x-2 w-full sm:w-auto">
@@ -147,8 +128,7 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
           )}
         </Button>
       </div>
-
-      {/* Offscreen Rendering Container for share card */}
+      {}
       <div 
         aria-hidden="true"
         className="fixed top-[-9999px] left-[-9999px]"

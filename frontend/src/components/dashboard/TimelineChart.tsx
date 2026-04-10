@@ -1,5 +1,4 @@
 'use client';
-
 import React from 'react';
 import {
   LineChart,
@@ -13,40 +12,29 @@ import {
 } from 'recharts';
 import { TimelinePoint } from '@/types/analysis';
 import { Card, CardContent } from '@/components/ui/card';
-
 interface TimelineChartProps {
   data: TimelinePoint[];
 }
-
 const LINE_COLORS = [
-  '#8B5A2B', // Ochre/Brown
-  '#556B2F', // Dark Olive Green
-  '#CD853F', // Peru (earthy orange)
-  '#8FBC8F', // Dark Sea Green
-  '#CD5C5C', // Indian Red
-  '#B8860B', // Dark Goldenrod
-  '#8B4513', // Saddle Brown
-  '#6B8E23', // Olive Drab
+  '#8B5A2B',
+  '#556B2F',
+  '#CD853F',
+  '#8FBC8F',
+  '#CD5C5C',
+  '#B8860B',
+  '#8B4513',
+  '#6B8E23',
 ];
-
 export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
   const [isMounted, setIsMounted] = React.useState(false);
-
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
-
   if (!data || data.length === 0) return null;
-
-  // Extract participant names from the first data point
   const participantNames = data[0]?.participant_volumes
     ? Object.keys(data[0].participant_volumes)
     : [];
-
-  // If no per-participant data, fall back to total volume
   const hasParticipantData = participantNames.length > 0;
-
-  // Transform data for recharts — flatten participant_volumes into top-level keys
   const chartData = data.map((point, i) => {
     const entry: Record<string, any> = {
       name: point.time.startsWith('Segment') ? point.time.replace('Segment ', '#') : point.time,
@@ -60,9 +48,7 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
     }
     return entry;
   });
-
   const lineKeys = hasParticipantData ? participantNames : ['Messages'];
-
   return (
     <Card className="w-full bg-white/80 backdrop-blur-sm border-black/5 shadow-sm mb-8 overflow-hidden">
       <CardContent className="p-6">
@@ -72,7 +58,6 @@ export const TimelineChart: React.FC<TimelineChartProps> = ({ data }) => {
             Who was talking and when — from start to end
           </p>
         </div>
-
         <div className="h-[300px] w-full mt-4">
           {isMounted ? (
             <ResponsiveContainer width="100%" height="100%" minHeight={0}>

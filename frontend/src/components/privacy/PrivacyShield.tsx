@@ -1,5 +1,4 @@
 'use client';
-
 import React from 'react';
 import { ShieldCheck, Lock, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -9,7 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
 export const PrivacyShield = () => {
   return (
     <TooltipProvider>

@@ -4,13 +4,11 @@ export interface ScoreMetadata {
   explanation: string;
   confidence: number;
 }
-
 export interface NotableQuote {
   message_id: number | null;
   text: string;
   context: string;
 }
-
 export interface ParticipantScoring {
   name: string;
   dominance: ScoreMetadata;
@@ -33,12 +31,10 @@ export interface ParticipantScoring {
   response_time?: ScoreMetadata;
   conversation_starter?: ScoreMetadata;
   question_ratio?: ScoreMetadata;
-  
   badges: string[];
   notable_quotes: NotableQuote[];
   message_count: number;
 }
-
 export interface SegmentScoring {
   segment_id: number;
   topic_label: string;
@@ -47,7 +43,6 @@ export interface SegmentScoring {
   notable_message_id?: number | null;
   notable_reason?: string | null;
 }
-
 export interface TimelinePoint {
   time: string;
   sentiment: number;
@@ -55,19 +50,16 @@ export interface TimelinePoint {
   tension: number;
   participant_volumes?: Record<string, number>;
 }
-
 export interface StandoutCard {
   title: string;
   description: string;
   type: 'award' | 'red_flag' | 'statistic';
   icon?: string;
 }
-
 export interface GlobalMetrics {
   conversation_health: number;
   total_messages: number;
 }
-
 export interface ScoringResponse {
   overall_summary: string;
   roast_summary: string;
@@ -78,7 +70,6 @@ export interface ScoringResponse {
   standout_cards: StandoutCard[];
   global_metrics: GlobalMetrics;
 }
-
 export interface AnalysisSuccessResponse {
   status: 'success';
   data: ScoringResponse;
@@ -87,7 +78,6 @@ export interface AnalysisSuccessResponse {
     processing_time: number;
   };
 }
-
 export interface AnalysisRequest {
   text: string;
   options?: {

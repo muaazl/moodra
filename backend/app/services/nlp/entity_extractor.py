@@ -5,24 +5,18 @@ import difflib
 from .schemas import EntityMatch, ParticipantProfile, SpeakerDetectionResult
 from ..preprocessing.schemas import PreprocessingResult, PreprocessedMessage
 from app.core.config import settings
-
 _SPACY_BATCH_SIZE = 64
-
-
 class EntityExtractor:
     """
     Extracts people entities and resolves participants using spaCy.
-
     Optimization vs. original:
     - Replaced per-message `self.nlp(text)` calls with `self.nlp.pipe(texts)`
       which processes all messages in one efficient batched pass.
     """
-
     def __init__(self, model_name: str = settings.SPACY_MODEL, use_ner_for_mentions: bool = False, nlp: Optional[spacy.language.Language] = None):
         self.use_ner_for_mentions = use_ner_for_mentions
         self._model_name = model_name
         self._nlp = nlp
-
     @property
     def nlp(self) -> spacy.language.Language:
         if self._nlp is None:
@@ -35,17 +29,10 @@ class EntityExtractor:
                 )
                 self._nlp = spacy.load(self._model_name)
         return self._nlp
-
-    # ------------------------------------------------------------------
-    # Main entry point
-    # ------------------------------------------------------------------
-
     def analyze_speakers(
         self, preprocessed_data: PreprocessingResult
     ) -> SpeakerDetectionResult:
         messages = preprocessed_data.messages
-
-        # 1. Build participant profiles from known senders
         participant_profiles: Dict[str, ParticipantProfile] = {}
         for msg in messages:
             sender = msg.raw.sender
@@ -56,21 +43,15 @@ class EntityExtractor:
                     )
                 participant_profiles[sender].messages_sent += 1
                 participant_profiles[sender].words_total += msg.metadata.word_count
-
         all_mentions: List[EntityMatch] = []
-
-        # 2. Batch NER with nlp.pipe() — conditionally executed based on use_ner_for_mentions
         if self.use_ner_for_mentions:
             valid_messages = [
                 m for m in messages if not (m.raw.is_system or m.raw.is_media)
             ]
             texts = [m.base_clean for m in valid_messages]
-
-            # nlp.pipe handles batching internally; n_process=1 is safe on Windows
             docs = list(
                 self.nlp.pipe(texts, batch_size=_SPACY_BATCH_SIZE, n_process=1)
             )
-
             for msg, doc in zip(valid_messages, docs):
                 for ent in doc.ents:
                     if ent.label_ == "PERSON":
@@ -86,14 +67,7 @@ class EntityExtractor:
                         )
                         all_mentions.append(match)
                         self._resolve_entity(match, participant_profiles, msg)
-
-        # 3. Finalize
         return self._finalize_analysis(participant_profiles, all_mentions, messages)
-
-    # ------------------------------------------------------------------
-    # Entity resolution (unchanged logic)
-    # ------------------------------------------------------------------
-
     def _resolve_entity(
         self,
         match: EntityMatch,
@@ -102,8 +76,6 @@ class EntityExtractor:
     ):
         best_match_name = None
         highest_score = 0.0
-
-        # Priority 1: Exact or alias match
         for p_name, profile in profiles.items():
             for alias in profile.aliases:
                 if match.text.lower() == alias.lower():
@@ -112,8 +84,6 @@ class EntityExtractor:
                     break
             if best_match_name:
                 break
-
-        # Priority 2: First name match
         if not best_match_name:
             for p_name in profiles:
                 parts = p_name.split()
@@ -121,8 +91,6 @@ class EntityExtractor:
                     best_match_name = p_name
                     highest_score = 0.9
                     break
-
-        # Priority 3: Fuzzy match
         if not best_match_name:
             for p_name, profile in profiles.items():
                 score = difflib.SequenceMatcher(
@@ -131,7 +99,6 @@ class EntityExtractor:
                 if score > 0.85 and score > highest_score:
                     highest_score = score
                     best_match_name = p_name
-
         if best_match_name:
             profile = profiles[best_match_name]
             profile.mentions.append(match)
@@ -149,11 +116,6 @@ class EntityExtractor:
                 )
             profiles[name_key].mentions.append(match)
             profiles[name_key].mention_count += 1
-
-    # ------------------------------------------------------------------
-    # Finalization (unchanged logic)
-    # ------------------------------------------------------------------
-
     def _finalize_analysis(
         self,
         profiles: Dict[str, ParticipantProfile],
@@ -163,7 +125,6 @@ class EntityExtractor:
         all_profiles = list(profiles.values())
         total_messages = len([m for m in messages if not m.raw.is_system])
         total_mentions = sum(p.mention_count for p in all_profiles)
-
         for profile in all_profiles:
             vol_score = (
                 profile.messages_sent / total_messages if total_messages > 0 else 0
@@ -174,7 +135,6 @@ class EntityExtractor:
             profile.dominance_score = min(
                 (vol_score * 0.7) + (ment_score * 0.3), 1.0
             )
-
             mentioned_by = profile.metadata.get("mentioned_by", {})
             unique_mentioners = len(mentioned_by)
             total_possible = (
@@ -183,17 +143,14 @@ class EntityExtractor:
             )
             if total_possible > 0:
                 profile.centrality_score = unique_mentioners / total_possible
-
         alias_map = {
             alias: p.name for p in all_profiles for alias in p.aliases
         }
-
         top_referenced = None
         most_dominant = None
         if all_profiles:
             top_referenced = max(all_profiles, key=lambda x: x.mention_count).name
             most_dominant = max(all_profiles, key=lambda x: x.dominance_score).name
-
         return SpeakerDetectionResult(
             participants=all_profiles,
             unidentified_entities=[],

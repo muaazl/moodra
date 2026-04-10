@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, ClipboardPaste, Sparkles, Wand2, Clock } from 'lucide-react';
@@ -8,31 +7,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnalysisProgress } from './AnalysisProgress';
-
 interface ChatInputFormProps {
   onAnalyze: (text: string | null, file: File | null, anonymize: boolean) => void;
   isLoading: boolean;
   estimatedDuration: number;
 }
-
 export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoading, estimatedDuration }) => {
   const [pastedText, setPastedText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState<'paste' | 'upload'>('paste');
-
   const handlePasteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPastedText(e.target.value);
   };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
     }
   };
-
   const isSubmitDisabled = isLoading || (mode === 'paste' ? !pastedText.trim() : !file);
-
-  // Estimate time based on input size
   const getEstimatedTime = () => {
     if (mode === 'paste' && pastedText.trim()) {
       const est = Math.max(5, Math.ceil(pastedText.length / 5000) + 3);
@@ -43,19 +35,15 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
     }
     return null;
   };
-
   const estimatedTime = getEstimatedTime();
-
   const handleSubmit = async () => {
     if (isSubmitDisabled) return;
-
     if (mode === 'paste') {
       onAnalyze(pastedText, null, false);
     } else if (file) {
       onAnalyze(null, file, false);
     }
   };
-
   return (
     <Card className="w-full max-w-2xl mx-auto overflow-hidden border-black/5 bg-white/70 backdrop-blur-sm shadow-sm">
       <CardContent className="p-6 sm:p-8">
@@ -70,7 +58,6 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
               Upload File
             </TabsTrigger>
           </TabsList>
-
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={mode}
@@ -116,16 +103,14 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
             </motion.div>
           </AnimatePresence>
         </Tabs>
-
         <div className="mt-6 space-y-4">
-          {/* Estimated time indicator */}
+          {}
           {estimatedTime && !isLoading && (
             <div className="flex items-center justify-center space-x-2 text-zinc-400">
               <Clock className="w-3.5 h-3.5" />
               <span className="text-xs font-medium">Estimated time: ~{estimatedTime}s</span>
             </div>
           )}
-
           <Button
             type="button"
             onClick={handleSubmit}
@@ -150,9 +135,7 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({ onAnalyze, isLoadi
               </div>
             )}
           </Button>
-
           <AnalysisProgress isAnalyzing={isLoading} estimatedDuration={estimatedDuration} />
-
           {!isLoading && (
             <p className="text-center text-[10px] text-zinc-400 tracking-wide pt-1">
               Your data stays on your device. Nothing is stored.

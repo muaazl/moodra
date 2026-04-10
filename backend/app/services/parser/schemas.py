@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-
 class RawMessage(BaseModel):
     """Normalized message format for internal processing."""
     timestamp: datetime
@@ -9,13 +8,11 @@ class RawMessage(BaseModel):
     content: str
     is_system: bool = Field(False, description="Flag for automated system messages (e.g. encryption/joined labels).")
     is_media: bool = Field(False, description="Flag for media placeholders like <Media omitted>.")
-
 class ParseWarning(BaseModel):
     """Soft errors encountered during parsing."""
     line_number: int
     content: str
     reason: str
-
 class ParseResult(BaseModel):
     """The final structured output of the parsing operation."""
     messages: List[RawMessage]
