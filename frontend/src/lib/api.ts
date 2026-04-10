@@ -1,5 +1,5 @@
 import { AnalysisRequest, AnalysisSuccessResponse } from "@/types/analysis";
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://muaazl-moodra-api.hf.space';
 export async function analyzeText(request: AnalysisRequest): Promise<AnalysisSuccessResponse> {
   const response = await fetch(`${BACKEND_URL}/api/v1/analyze/text`, {
     method: 'POST',
