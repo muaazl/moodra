@@ -28,7 +28,7 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
         height: 675,
       });
       const link = document.createElement('a');
-      link.download = `moodra-vibe-${Date.now()}.png`;
+      link.download = `moodrae-vibe-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
       setIsFinished(true);
@@ -69,7 +69,7 @@ export const ShareAction: React.FC<ShareActionProps> = ({ result }) => {
         format: [pdfWidth, pdfHeight],
       });
       pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`moodra-results-${Date.now()}.pdf`);
+      pdf.save(`moodrae-results-${Date.now()}.pdf`);
       setIsFinished(true);
       toast('PDF generated successfully!', 'success');
       setTimeout(() => setIsFinished(false), 3000);

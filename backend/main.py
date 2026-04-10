@@ -14,14 +14,14 @@ logger = logging.getLogger("api_main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Warm up ML models
-    logger.info("Starting Moodra Engine")
+    logger.info("Starting Moodrae Engine")
     coordinator.warm_up()
     yield
     # Shutdown: Clean up if needed
-    logger.info("Shutting down Moodra Engine")
+    logger.info("Shutting down Moodrae Engine")
 
 app = FastAPI(
-    title="Moodra - Analyzer Service",
+    title="Moodrae - Analyzer Service",
     description="Privacy-first, local-only NLP engine for WhatsApp chat analysis.",
     version="1.0.0",
     lifespan=lifespan
@@ -32,7 +32,7 @@ app = FastAPI(
 default_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://moodra.vercel.app"
+    "https://moodrae.vercel.app"
 ]
 
 allowed_origins_env = os.getenv("CORS_ORIGINS", "")
@@ -57,7 +57,7 @@ async def health_check():
     """Minimal health check to verify backend is up."""
     return {
         "status": "online",
-        "service": "Moodra Engine",
+        "service": "Moodrae Engine",
         "timestamp": None
     }
 

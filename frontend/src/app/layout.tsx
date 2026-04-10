@@ -7,7 +7,7 @@ const inter = Inter({
   subsets: ["latin"],
 });
 export const metadata: Metadata = {
-  title: "Moodra",
+  title: "Moodrae",
   description: "Find out what your chats really say about you. Private & fun chat analyzer.",
   icons: {
     icon: "/favicon.svg",

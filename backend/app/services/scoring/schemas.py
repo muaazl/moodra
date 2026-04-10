@@ -54,7 +54,7 @@ class StandoutCard(BaseModel):
     description: str
     icon_hint: str
 class ScoringResponse(BaseModel):
-    """The final aggregate output of the Moodra engine."""
+    """The final aggregate output of the Moodrae engine."""
     overall_summary: str
     roast_summary: str
     overall_mood: str

@@ -1,4 +1,4 @@
-# Moodra - API Specification
+# Moodrae - API Specification
 
 ## 1. Core Endpoints
 

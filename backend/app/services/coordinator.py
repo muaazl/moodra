@@ -39,7 +39,7 @@ class AnalysisCoordinator:
     """
     def __init__(self):
         self._executor = ThreadPoolExecutor(max_workers=_THREAD_WORKERS)
-        logger.info(f"Initializing Moodra Analyzers (Model: {settings.TOPIC_MODEL}, {settings.SPACY_MODEL})...")
+        logger.info(f"Initializing Moodrae Analyzers (Model: {settings.TOPIC_MODEL}, {settings.SPACY_MODEL})...")
         shared_embedder = SentenceTransformer(settings.TOPIC_MODEL)
         try:
             shared_nlp = spacy.load(settings.SPACY_MODEL)

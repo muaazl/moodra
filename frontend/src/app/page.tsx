@@ -75,8 +75,8 @@ export default function Home() {
         {}
         <header className="flex items-center justify-between mb-16">
           <div className="flex items-center space-x-2">
-            <img src="/favicon.svg" alt="Moodra" className="w-8 h-8 drop-shadow-sm" />
-            <span className="text-xl font-black tracking-tighter text-zinc-800">Moodra</span>
+            <img src="/favicon.svg" alt="Moodrae" className="w-8 h-8 drop-shadow-sm" />
+            <span className="text-xl font-black tracking-tighter text-zinc-800">Moodrae</span>
           </div>
         </header>
         <AnimatePresence mode="wait">
@@ -210,7 +210,7 @@ export default function Home() {
         </AnimatePresence>
         <footer className="mt-24 pt-8 border-t border-zinc-500/5 text-center">
           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">
-            Moodra &middot; {new Date().getFullYear()} &middot; Privacy First
+            Moodrae &middot; {new Date().getFullYear()} &middot; Privacy First
           </p>
         </footer>
       </div>

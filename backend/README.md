@@ -1,5 +1,5 @@
 ---
-title: Moodra Backend
+title: Moodrae Backend
 emoji: 🧠
 colorFrom: indigo
 colorTo: blue
@@ -7,9 +7,9 @@ sdk: docker
 pinned: false
 ---
 
-# Moodra - Analyzer Service Backend
+# Moodrae - Analyzer Service Backend
 
-This is the backend for Moodra, a privacy-first NLP engine for WhatsApp chat analysis.
+This is the backend for Moodrae, a privacy-first NLP engine for WhatsApp chat analysis.
 
 ## Deployment Details
 - **SDK**: Docker
@@ -17,4 +17,4 @@ This is the backend for Moodra, a privacy-first NLP engine for WhatsApp chat ana
 - **Framework**: FastAPI
 
 ## Environment Variables
-- `CORS_ORIGINS`: Comma-separated list of allowed origins (e.g., `https://moodra.vercel.app`).
+- `CORS_ORIGINS`: Comma-separated list of allowed origins (e.g., `https://moodrae.vercel.app`).
